@@ -1,7 +1,12 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "../ui/button";
+import NewChatModal from "./NewChatModal";
 
 const ChatSidebar = ({
   conversations,
+  users,
+  showUsers,
+  setShowUsers,
   loading,
   error,
   selectedUser,
@@ -9,18 +14,23 @@ const ChatSidebar = ({
 }) => {
   return (
     <div className="w-72 border-r bg-background">
-      <div className="p-4 font-bold text-lg border-b">VHub </div>
+      <div className="p-4 border-b flex justify-between items-center">
+        <span className="font-bold">VHub Chats</span>
+
+        <Button size="sm" onClick={() => setShowUsers(true)}>
+          + New
+        </Button>
+      </div>
 
       <ScrollArea className="h-[calc(100vh-64px)]">
         {loading && (
-          <p className="p-4 text-muted-foreground">Loading users...</p>
+          <p className="p-4 text-muted-foreground">Loading chats...</p>
         )}
 
-        {error && <p className="p-4 text-red-500">Failed to load users</p>}
+        {error && <p className="p-4 text-red-500">Failed to load chats</p>}
 
         {!loading &&
-          conversations &&
-          conversations.map((conversation) => (
+          conversations?.map((conversation) => (
             <div
               key={conversation._id}
               onClick={() => setSelectedUser(conversation.user)}
@@ -34,10 +44,17 @@ const ChatSidebar = ({
 
         {conversations.length === 0 && (
           <p className="p-4 text-muted-foreground">
-            No chats yet. <br /> Send your first message.
+            No chats yet. Send your first message.
           </p>
         )}
       </ScrollArea>
+
+      <NewChatModal
+        open={showUsers}
+        onOpenChange={setShowUsers}
+        users={users}
+        onSelectUser={setSelectedUser}
+      />
     </div>
   );
 };

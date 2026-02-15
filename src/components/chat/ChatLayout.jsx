@@ -7,8 +7,10 @@ import ChatMessages from "./ChatMessages";
 import ChatInput from "./ChatInput";
 
 import { getConversations } from "../../services/conversationApi";
+import { getUsers } from "../../services/userApi";
 
 const ChatLayout = () => {
+  const [showUsers, setShowUsers] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
 
   const currentUser = JSON.parse(localStorage.getItem("user"));
@@ -22,10 +24,18 @@ const ChatLayout = () => {
     queryFn: getConversations,
   });
 
+  const { data: users = [] } = useQuery({
+    queryKey: ["all-users"],
+    queryFn: getUsers,
+  });
+
   return (
     <div className="h-screen flex bg-muted">
       <ChatSidebar
         conversations={conversations}
+        users={users}
+        showUsers={showUsers}
+        setShowUsers={setShowUsers}
         loading={isLoading}
         error={error}
         selectedUser={selectedUser}
