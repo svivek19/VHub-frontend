@@ -28,6 +28,8 @@ const AuthPage = () => {
     onSuccess: (data) => {
       localStorage.setItem("token", data.token);
 
+      localStorage.setItem("user", JSON.stringify(data.user));
+
       socket.connect();
       socket.emit("user-connected", data.user.id);
 

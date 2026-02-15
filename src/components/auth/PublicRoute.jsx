@@ -4,7 +4,7 @@ const PublicRoute = ({ children }) => {
   const token = localStorage.getItem("token");
 
   if (token) {
-    return Navigate({ to: "/chat", replace });
+    return <Navigate to="/chat" replace={true} />;
   }
 
   return children;

@@ -1,13 +1,24 @@
+import { useQuery } from "@tanstack/react-query";
+import { getMessages } from "../../services/messageApi";
+
 const ChatMessages = ({ selectedUser }) => {
+  const { data: messages = [], isLoading } = useQuery({
+    queryKey: ["messages", selectedUser?._id],
+    queryFn: () => getMessages(selectedUser._id),
+    enabled: !!selectedUser,
+  });
+
+  if (!selectedUser) return null;
+
+  if (isLoading) return <p>Loading messages...</p>;
+
   return (
     <div className="flex-1 p-4 overflow-y-auto">
-      {selectedUser ? (
-        <p className="text-muted-foreground">Messages will appear here...</p>
-      ) : (
-        <p className="text-center mt-10 text-muted-foreground">
-          Select a user to start chatting
-        </p>
-      )}
+      {messages.map((msg) => (
+        <div key={msg._id} className="mb-2">
+          {msg.text}
+        </div>
+      ))}
     </div>
   );
 };
