@@ -2,9 +2,14 @@ import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { loginUser, registerUser } from "../services/authApi";
 import { socket } from "../socket/socket";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+import { getErrorMessage } from "../utils/errorHandler";
 
 const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true);
+
+  const navigate = useNavigate();
 
   const [form, setForm] = useState({
     name: "",
@@ -25,11 +30,17 @@ const AuthPage = () => {
 
       socket.connect();
       socket.emit("user-connected", data.user.id);
+
+      setForm({ name: "", email: "", password: "" });
+
+      toast.success("Login successful ");
+
+      navigate("/chat");
     },
     onError: (error) => {
-      console.log(error);
-
-      setErrorMsg(error.response?.data?.message || "Login failed");
+      const msg = getErrorMessage(error);
+      setErrorMsg(msg);
+      toast.error(msg);
     },
   });
 
@@ -38,10 +49,12 @@ const AuthPage = () => {
     onSuccess: () => {
       setIsLogin(true);
       setErrorMsg("");
-      alert("Signup successful ");
+      toast.success("Signup successful ");
     },
     onError: (error) => {
-      setErrorMsg(error.response?.data?.message || "Signup failed");
+      const msg = getErrorMessage(error);
+      setErrorMsg(msg);
+      toast.error(msg);
     },
   });
 
@@ -57,6 +70,7 @@ const AuthPage = () => {
     } else {
       registerMutation.mutate(form);
     }
+    setForm({ name: "", email: "", password: "" });
   };
 
   const loading = loginMutation.isPending || registerMutation.isPending;
