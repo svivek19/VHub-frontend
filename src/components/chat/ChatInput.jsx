@@ -9,6 +9,13 @@ const ChatInput = ({ selectedUser, currentUser }) => {
   const sendMessage = () => {
     if (!text.trim()) return;
 
+    console.log({
+      senderId: currentUser?.id,
+      receiverId: selectedUser?._id,
+      text,
+      connected: socket.connected,
+    });
+
     socket.emit("send-message", {
       senderId: currentUser.id,
       receiverId: selectedUser._id,

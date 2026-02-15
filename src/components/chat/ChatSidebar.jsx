@@ -11,6 +11,7 @@ const ChatSidebar = ({
   error,
   selectedUser,
   setSelectedUser,
+  currentUser,
 }) => {
   return (
     <div className="w-72 border-r bg-background">
@@ -30,17 +31,25 @@ const ChatSidebar = ({
         {error && <p className="p-4 text-red-500">Failed to load chats</p>}
 
         {!loading &&
-          conversations?.map((conversation) => (
-            <div
-              key={conversation._id}
-              onClick={() => setSelectedUser(conversation.user)}
-              className={`p-4 cursor-pointer hover:bg-accent ${
-                selectedUser?._id === conversation.user._id ? "bg-accent" : ""
-              }`}
-            >
-              {conversation.user.name}
-            </div>
-          ))}
+          conversations?.map((conversation) => {
+            const user = conversation.participants.find(
+              (p) => p._id !== currentUser.id,
+            );
+
+            if (!user) return null;
+
+            return (
+              <div
+                key={conversation._id}
+                onClick={() => setSelectedUser(user)}
+                className={`p-4 cursor-pointer hover:bg-accent ${
+                  selectedUser?._id === user._id ? "bg-accent" : ""
+                }`}
+              >
+                {user.name}
+              </div>
+            );
+          })}
 
         {conversations.length === 0 && (
           <p className="p-4 text-muted-foreground">

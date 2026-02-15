@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import ChatSidebar from "./ChatSidebar";
@@ -8,6 +8,7 @@ import ChatInput from "./ChatInput";
 
 import { getConversations } from "../../services/conversationApi";
 import { getUsers } from "../../services/userApi";
+import { socket } from "@/socket/socket";
 
 const ChatLayout = () => {
   const [showUsers, setShowUsers] = useState(false);
@@ -28,6 +29,20 @@ const ChatLayout = () => {
     queryKey: ["all-users"],
     queryFn: getUsers,
   });
+
+  useEffect(() => {
+    if (!socket.connected) {
+      socket.connect();
+    }
+
+    if (currentUser) {
+      socket.emit("user-connected", currentUser.id);
+    }
+
+    return () => {
+      socket.off();
+    };
+  }, [currentUser]);
 
   return (
     <div className="h-screen flex bg-muted">
