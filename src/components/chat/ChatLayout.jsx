@@ -35,12 +35,18 @@ const ChatLayout = () => {
       socket.connect();
     }
 
-    if (currentUser) {
-      socket.emit("user-connected", currentUser.id);
-    }
+    const onConnect = () => {
+      console.log("SOCKET CONNECTED:", socket.id);
+
+      if (currentUser) {
+        socket.emit("user-connected", String(currentUser._id));
+      }
+    };
+
+    socket.on("connect", onConnect);
 
     return () => {
-      socket.off();
+      socket.off("connect", onConnect);
     };
   }, [currentUser]);
 
