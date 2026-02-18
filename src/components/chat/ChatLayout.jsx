@@ -12,6 +12,7 @@ import { socket } from "@/socket/socket";
 
 const ChatLayout = () => {
   const [showUsers, setShowUsers] = useState(false);
+  const [optimisticMessages, setOptimisticMessages] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
 
   const currentUser = JSON.parse(localStorage.getItem("user"));
@@ -30,6 +31,18 @@ const ChatLayout = () => {
     queryFn: getUsers,
   });
 
+  const addTempMessage = (text) => {
+    const tempMsg = {
+      _id: "temp-" + Date.now(),
+      sender: currentUser.id,
+      text,
+      createdAt: new Date(),
+      status: "sending",
+    };
+
+    setOptimisticMessages((prev) => [...prev, tempMsg]);
+  };
+
   useEffect(() => {
     if (!socket.connected) {
       socket.connect();
@@ -39,7 +52,7 @@ const ChatLayout = () => {
       console.log("SOCKET CONNECTED:", socket.id);
 
       if (currentUser) {
-        socket.emit("user-connected", String(currentUser._id));
+        socket.emit("user-connected", String(currentUser.id));
       }
     };
 
@@ -62,15 +75,31 @@ const ChatLayout = () => {
         selectedUser={selectedUser}
         setSelectedUser={setSelectedUser}
         currentUser={currentUser}
+        optimisticMessages={optimisticMessages}
       />
 
       <div className="flex-1 flex flex-col">
-        <ChatHeader selectedUser={selectedUser} />
+        {selectedUser ? (
+          <>
+            <ChatHeader selectedUser={selectedUser} />
 
-        <ChatMessages selectedUser={selectedUser} />
+            <ChatMessages
+              selectedUser={selectedUser}
+              currentUser={currentUser}
+            />
+          </>
+        ) : (
+          <div className="flex-1 flex items-center justify-center text-gray-500">
+            Select a chat
+          </div>
+        )}
 
         {selectedUser && (
-          <ChatInput selectedUser={selectedUser} currentUser={currentUser} />
+          <ChatInput
+            selectedUser={selectedUser}
+            currentUser={currentUser}
+            onOptimisticMessage={addTempMessage}
+          />
         )}
       </div>
     </div>
