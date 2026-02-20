@@ -6,6 +6,13 @@ import { useState } from "react";
 const ChatInput = ({ selectedUser, currentUser, onOptimisticMessage }) => {
   const [text, setText] = useState("");
 
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      sendMessage();
+    }
+  };
+
   const sendMessage = () => {
     if (!text.trim()) return;
 
@@ -33,6 +40,7 @@ const ChatInput = ({ selectedUser, currentUser, onOptimisticMessage }) => {
     <div className="p-4 border-t bg-background flex gap-2">
       <Input
         value={text}
+        onKeyDown={handleKeyDown}
         onChange={handleTyping}
         placeholder="Type a message..."
       />

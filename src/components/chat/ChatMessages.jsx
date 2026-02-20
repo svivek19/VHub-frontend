@@ -97,43 +97,88 @@ const ChatMessages = ({ selectedUser, currentUser }) => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [localMessages.length]);
 
+  // --- date grouping helper ---
+  const getDateLabel = (dateStr) => {
+    const msgDate = new Date(dateStr);
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+
+    const isSameDay = (a, b) =>
+      a.getDate() === b.getDate() &&
+      a.getMonth() === b.getMonth() &&
+      a.getFullYear() === b.getFullYear();
+
+    if (isSameDay(msgDate, today)) return "Today";
+    if (isSameDay(msgDate, yesterday)) return "Yesterday";
+
+    return msgDate.toLocaleDateString([], {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  };
+
+  const groupedMessages = localMessages.reduce((groups, msg) => {
+    const label = getDateLabel(msg.createdAt);
+    if (!groups[label]) groups[label] = [];
+    groups[label].push(msg);
+    return groups;
+  }, {});
+
+  const groupEntries = Object.entries(groupedMessages);
+
   return (
     <div className="flex-1 p-4 overflow-y-auto space-y-2">
-      {localMessages.map((msg) => {
-        const isMe = String(msg.sender) === String(currentUser?.id);
-
-        const time = new Date(msg.createdAt).toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        });
-
-        return (
-          <div
-            key={msg._id}
-            className={`flex ${isMe ? "justify-end" : "justify-start"}`}
-          >
-            <div
-              className={`max-w-[70%] px-3 py-2 rounded-2xl text-sm shadow ${
-                isMe
-                  ? "bg-blue-600 text-white rounded-br-sm"
-                  : "bg-gray-200 text-black rounded-bl-sm"
-              }`}
-            >
-              {msg.text}
-
-              <div className="text-[10px] opacity-70 mt-1 text-right">
-                {time}
-              </div>
-
-              {isMe && (
-                <div className="text-[10px] text-right mt-1 opacity-80">
-                  {!msg.seen ? "✓" : "✓✓"}
-                </div>
-              )}
-            </div>
+      {groupEntries.map(([dateLabel, msgs]) => (
+        <div key={dateLabel}>
+          {/* Date separator */}
+          <div className="flex items-center justify-center my-3">
+            <span className="bg-gray-200 text-gray-500 text-xs font-medium px-3 py-1 rounded-full shadow-sm">
+              {dateLabel}
+            </span>
           </div>
-        );
-      })}
+
+          {/* Messages for this date */}
+          <div className="space-y-2">
+            {msgs.map((msg) => {
+              const isMe = String(msg.sender) === String(currentUser?.id);
+
+              const time = new Date(msg.createdAt).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              });
+
+              return (
+                <div
+                  key={msg._id}
+                  className={`flex ${isMe ? "justify-end" : "justify-start"}`}
+                >
+                  <div
+                    className={`max-w-[70%] px-3 py-2 rounded-2xl text-sm shadow ${
+                      isMe
+                        ? "bg-blue-600 text-white rounded-br-sm"
+                        : "bg-gray-200 text-black rounded-bl-sm"
+                    }`}
+                  >
+                    {msg.text}
+
+                    <div className="text-[10px] opacity-70 mt-1 text-right">
+                      {time}
+                    </div>
+
+                    {isMe && (
+                      <div className="text-[10px] text-right mt-1 opacity-80">
+                        {!msg.seen ? "✓" : "✓✓"}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ))}
 
       {isTyping && (
         <div className="text-sm text-gray-500 italic px-2">

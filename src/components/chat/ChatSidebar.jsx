@@ -1,6 +1,18 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "../ui/button";
 import NewChatModal from "./NewChatModal";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { socket } from "@/socket/socket";
+import { useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 
 const ChatSidebar = ({
   conversations,
@@ -13,14 +25,51 @@ const ChatSidebar = ({
   setSelectedUser,
   currentUser,
 }) => {
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.clear();
+
+    socket.disconnect();
+
+    queryClient.clear();
+
+    navigate("/");
+  };
+
   return (
     <div className="w-72 border-r bg-background">
       <div className="p-4 border-b flex justify-between items-center">
-        <span className="font-bold">VHub Chats</span>
+        <span className="font-bold text-lg">VHub</span>
 
-        <Button size="sm" onClick={() => setShowUsers(true)}>
-          + New
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button size="sm" onClick={() => setShowUsers(true)}>
+            + New
+          </Button>
+
+          {/* User Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Avatar className="cursor-pointer h-8 w-8">
+                <AvatarFallback>{currentUser?.name?.charAt(0)}</AvatarFallback>
+              </Avatar>
+            </DropdownMenuTrigger>
+
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem>Profile</DropdownMenuItem>
+              <DropdownMenuItem>Settings</DropdownMenuItem>
+              <DropdownMenuItem>Notifications</DropdownMenuItem>
+
+              <DropdownMenuSeparator />
+
+              <DropdownMenuItem>Help</DropdownMenuItem>
+              <DropdownMenuItem className="text-red-500" onClick={handleLogout}>
+                Logout
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
       <ScrollArea className="h-[calc(100vh-64px)]">
