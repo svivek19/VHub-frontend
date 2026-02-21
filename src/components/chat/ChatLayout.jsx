@@ -63,6 +63,20 @@ const ChatLayout = () => {
     };
   }, [currentUser]);
 
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        setSelectedUser(null);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
   return (
     <div className="h-screen flex bg-muted">
       <ChatSidebar

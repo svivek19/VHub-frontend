@@ -5,6 +5,10 @@ import { socket } from "../socket/socket";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { getErrorMessage } from "../utils/errorHandler";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 
 const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -78,66 +82,76 @@ const AuthPage = () => {
   const loading = loginMutation.isPending || registerMutation.isPending;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-neutral-100 p-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8">
-        <h1 className="text-2xl font-bold text-center mb-6">
-          {isLogin ? "Login to VHub" : "Create Account"}
-        </h1>
+    <div className="min-h-screen flex items-center justify-center bg-muted/40 px-4">
+      <Card className="w-full max-w-md shadow-lg border-border">
+        <CardHeader>
+          <CardTitle className="text-2xl text-center">
+            {isLogin ? "Login to VHub" : "Create Account"}
+          </CardTitle>
+        </CardHeader>
 
-        {errorMsg && (
-          <p className="text-red-500 text-sm mb-4 text-center">{errorMsg}</p>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {!isLogin && (
-            <input
-              name="name"
-              placeholder="Name"
-              value={form.name}
-              onChange={handleChange}
-              className="w-full border rounded-lg p-3"
-              required
-            />
+        <CardContent>
+          {errorMsg && (
+            <p className="text-destructive text-sm mb-4 text-center">
+              {errorMsg}
+            </p>
           )}
 
-          <input
-            name="email"
-            type="email"
-            placeholder="Email"
-            value={form.email}
-            onChange={handleChange}
-            className="w-full border rounded-lg p-3"
-            required
-          />
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {!isLogin && (
+              <div className="space-y-2">
+                <Label>Name</Label>
+                <Input
+                  name="name"
+                  placeholder="Enter your name"
+                  value={form.name}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+            )}
 
-          <input
-            name="password"
-            type="password"
-            placeholder="Password"
-            value={form.password}
-            onChange={handleChange}
-            className="w-full border rounded-lg p-3"
-            required
-          />
+            <div className="space-y-2">
+              <Label>Email</Label>
+              <Input
+                name="email"
+                type="email"
+                placeholder="Enter your email"
+                value={form.email}
+                onChange={handleChange}
+                required
+              />
+            </div>
 
-          <button
-            className="w-full bg-black text-white py-3 rounded-lg"
-            disabled={loading}
-          >
-            {loading ? "Please wait..." : isLogin ? "Login" : "Sign Up"}
-          </button>
-        </form>
+            <div className="space-y-2">
+              <Label>Password</Label>
+              <Input
+                name="password"
+                type="password"
+                placeholder="Enter your password"
+                value={form.password}
+                onChange={handleChange}
+                required
+              />
+            </div>
 
-        <p className="text-sm text-center mt-4">
-          {isLogin ? "No account?" : "Already have an account?"}
-          <button
-            onClick={() => setIsLogin(!isLogin)}
-            className="ml-2 underline"
-          >
-            {isLogin ? "Signup" : "Login"}
-          </button>
-        </p>
-      </div>
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? "Please wait..." : isLogin ? "Login" : "Sign Up"}
+            </Button>
+          </form>
+
+          <p className="text-sm text-center mt-6 text-muted-foreground">
+            {isLogin ? "No account?" : "Already have an account?"}
+            <button
+              onClick={() => setIsLogin(!isLogin)}
+              className="ml-2 text-primary hover:underline"
+              type="button"
+            >
+              {isLogin ? "Signup" : "Login"}
+            </button>
+          </p>
+        </CardContent>
+      </Card>
     </div>
   );
 };
