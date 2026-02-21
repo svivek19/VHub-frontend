@@ -78,7 +78,7 @@ const ChatLayout = () => {
   }, []);
 
   return (
-    <div className="h-screen flex bg-muted">
+    <div className="h-screen flex bg-muted overflow-hidden">
       <ChatSidebar
         conversations={conversations}
         users={users}
@@ -103,8 +103,36 @@ const ChatLayout = () => {
             />
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center text-gray-500">
-            Select a chat
+          <div className="flex-1 flex items-center justify-center bg-background">
+            <div className="text-center max-w-sm space-y-4">
+              {/* Icon Circle */}
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-muted">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-8 w-8 text-muted-foreground"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={1.5}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M8 10h8M8 14h5m-9 6 3-3h11a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v11z"
+                  />
+                </svg>
+              </div>
+
+              {/* Title */}
+              <h2 className="text-lg font-semibold">
+                No conversation selected
+              </h2>
+
+              {/* Subtitle */}
+              <p className="text-sm text-muted-foreground">
+                Choose a conversation from the sidebar or start a new chat.
+              </p>
+            </div>
           </div>
         )}
 
