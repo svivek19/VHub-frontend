@@ -14,7 +14,8 @@ const ChatLayout = () => {
   const [showUsers, setShowUsers] = useState(false);
   const [optimisticMessages, setOptimisticMessages] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
-
+  const [onlineUsers, setOnlineUsers] = useState([]);
+  const [unread, setUnread] = useState({});
   const currentUser = JSON.parse(localStorage.getItem("user"));
 
   const {
@@ -64,6 +65,29 @@ const ChatLayout = () => {
   }, [currentUser]);
 
   useEffect(() => {
+    socket.on("online-users", (users) => {
+      setOnlineUsers(users);
+    });
+
+    return () => {
+      socket.off("online-users");
+    };
+  }, []);
+
+  useEffect(() => {
+    socket.on("unread-message", ({ senderId }) => {
+      setUnread((prev) => ({
+        ...prev,
+        [senderId]: (prev[senderId] || 0) + 1,
+      }));
+    });
+
+    return () => {
+      socket.off("unread-message");
+    };
+  }, []);
+
+  useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === "Escape") {
         setSelectedUser(null);
@@ -82,6 +106,9 @@ const ChatLayout = () => {
       <ChatSidebar
         conversations={conversations}
         users={users}
+        onlineUsers={onlineUsers}
+        unread={unread}
+        setUnread={setUnread}
         showUsers={showUsers}
         setShowUsers={setShowUsers}
         loading={isLoading}

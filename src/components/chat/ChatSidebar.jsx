@@ -9,7 +9,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
-  DropdownMenuLabel,
   DropdownMenuSubTrigger,
   DropdownMenuSub,
   DropdownMenuSubContent,
@@ -23,6 +22,9 @@ import { useNavigate } from "react-router-dom";
 const ChatSidebar = ({
   conversations,
   users,
+  onlineUsers,
+  unread,
+  setUnread,
   showUsers,
   setShowUsers,
   loading,
@@ -64,11 +66,6 @@ const ChatSidebar = ({
             </DropdownMenuTrigger>
 
             <DropdownMenuContent align="end" className="w-56 p-1">
-              <DropdownMenuItem>Profile</DropdownMenuItem>
-              <DropdownMenuItem>Notifications</DropdownMenuItem>
-
-              <DropdownMenuSeparator />
-
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger>Theme</DropdownMenuSubTrigger>
 
@@ -108,10 +105,6 @@ const ChatSidebar = ({
                 </DropdownMenuSubContent>
               </DropdownMenuSub>
 
-              <DropdownMenuSeparator />
-
-              <DropdownMenuItem>Help</DropdownMenuItem>
-
               <DropdownMenuItem
                 className="text-destructive focus:text-destructive"
                 onClick={handleLogout}
@@ -133,20 +126,45 @@ const ChatSidebar = ({
         {!loading &&
           conversations?.map((conversation) => {
             const user = conversation.participants.find(
-              (p) => p._id !== currentUser.id,
+              (p) => String(p._id) !== String(currentUser.id),
             );
 
             if (!user) return null;
 
+            const isOnline = onlineUsers.includes(String(user._id));
+            const unreadCount = unread[user._id] || 0;
+
+            console.log(conversation, "conversation");
+            console.log(user, "user");
+
             return (
               <div
                 key={conversation._id}
-                onClick={() => setSelectedUser(user)}
-                className={`p-4 cursor-pointer hover:bg-accent ${
+                onClick={() => {
+                  setSelectedUser(user);
+
+                  setUnread((prev) => ({
+                    ...prev,
+                    [user._id]: 0,
+                  }));
+                }}
+                className={`p-4 cursor-pointer hover:bg-accent flex justify-between items-center ${
                   selectedUser?._id === user._id ? "bg-accent" : ""
                 }`}
               >
-                {user.name}
+                <div className="flex items-center gap-2">
+                  <span>{user.name}</span>
+
+                  {isOnline && (
+                    <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                  )}
+                </div>
+
+                {unreadCount > 0 && (
+                  <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full">
+                    {unreadCount}
+                  </span>
+                )}
               </div>
             );
           })}
