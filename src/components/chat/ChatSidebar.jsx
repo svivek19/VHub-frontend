@@ -18,6 +18,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { socket } from "@/socket/socket";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 
 const ChatSidebar = ({
   conversations,
@@ -35,6 +36,7 @@ const ChatSidebar = ({
 }) => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const [search, setSearch] = useState("");
   const { theme, setTheme } = useTheme();
 
   const handleLogout = () => {
@@ -46,6 +48,16 @@ const ChatSidebar = ({
 
     navigate("/");
   };
+
+  const filteredConversations = conversations?.filter((conversation) => {
+    const user = conversation.participants.find(
+      (p) => String(p._id) !== String(currentUser.id),
+    );
+
+    if (!user) return false;
+
+    return user.name.toLowerCase().includes(search.toLowerCase());
+  });
 
   return (
     <div className="w-72 border-r border-border bg-sidebar text-sidebar-foreground">
@@ -123,8 +135,18 @@ const ChatSidebar = ({
 
         {error && <p className="p-4 text-red-500">Failed to load chats</p>}
 
+        <div className="p-2 border-b">
+          <input
+            type="search"
+            placeholder="Search..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full px-2 py-1 rounded border bg-background"
+          />
+        </div>
+
         {!loading &&
-          conversations?.map((conversation) => {
+          filteredConversations?.map((conversation) => {
             const user = conversation.participants.find(
               (p) => String(p._id) !== String(currentUser.id),
             );
@@ -133,9 +155,6 @@ const ChatSidebar = ({
 
             const isOnline = onlineUsers.includes(String(user._id));
             const unreadCount = unread[user._id] || 0;
-
-            console.log(conversation, "conversation");
-            console.log(user, "user");
 
             return (
               <div
@@ -152,12 +171,24 @@ const ChatSidebar = ({
                   selectedUser?._id === user._id ? "bg-accent" : ""
                 }`}
               >
-                <div className="flex items-center gap-2">
-                  <span>{user.name}</span>
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-2">
+                    <span>{user.name}</span>
 
-                  {isOnline && (
-                    <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                  )}
+                    {isOnline && (
+                      <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                    )}
+                  </div>
+
+                  <span className="text-xs text-gray-500">
+                    {isOnline
+                      ? "Online"
+                      : user.lastSeen
+                        ? `Last seen ${new Date(
+                            user.lastSeen,
+                          ).toLocaleTimeString()}`
+                        : ""}
+                  </span>
                 </div>
 
                 {unreadCount > 0 && (
@@ -168,6 +199,10 @@ const ChatSidebar = ({
               </div>
             );
           })}
+
+        {!loading && search && filteredConversations?.length === 0 && (
+          <p className="p-4 text-muted-foreground">No user found</p>
+        )}
 
         {conversations.length === 0 && (
           <p className="p-4 text-muted-foreground">

@@ -122,7 +122,7 @@ const ChatLayout = () => {
       <div className="flex-1 flex flex-col">
         {selectedUser ? (
           <>
-            <ChatHeader selectedUser={selectedUser} />
+            <ChatHeader selectedUser={selectedUser} onlineUsers={onlineUsers} />
 
             <ChatMessages
               selectedUser={selectedUser}
