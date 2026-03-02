@@ -19,6 +19,33 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 
+const formatLastSeen = (date) => {
+  if (!date) return "";
+
+  const last = new Date(date);
+  const now = new Date();
+
+  const isToday = last.toDateString() === now.toDateString();
+
+  const yesterday = new Date();
+  yesterday.setDate(now.getDate() - 1);
+
+  const isYesterday = last.toDateString() === yesterday.toDateString();
+
+  if (isToday) {
+    return `Last seen ${last.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    })}`;
+  }
+
+  if (isYesterday) {
+    return "Last seen yesterday";
+  }
+
+  return `Last seen ${last.toLocaleDateString()}`;
+};
+
 const ChatSidebar = ({
   conversations,
   users,
@@ -176,6 +203,9 @@ const ChatSidebar = ({
               >
                 <div className="flex flex-col">
                   <div className="flex items-center gap-2">
+                    <span className="bg-gray-400 px-2.5 py-1 text-white rounded-full">
+                      {user.name[0]}
+                    </span>
                     <span>{user.name}</span>
 
                     {isOnline && (
@@ -183,14 +213,8 @@ const ChatSidebar = ({
                     )}
                   </div>
 
-                  <span className="text-xs text-gray-500">
-                    {isOnline
-                      ? "Online"
-                      : user.lastSeen
-                        ? `Last seen ${new Date(
-                            user.lastSeen,
-                          ).toLocaleTimeString()}`
-                        : ""}
+                  <span className="text-xs text-gray-500 mt-1">
+                    {isOnline ? "Online" : formatLastSeen(user.lastSeen)}
                   </span>
                 </div>
 

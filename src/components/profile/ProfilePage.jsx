@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -6,17 +8,39 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 
+import { updateUser } from "@/services/userApi";
+
 const ProfilePage = ({ currentUser }) => {
   const [name, setName] = useState(currentUser?.name || "");
   const [email, setEmail] = useState(currentUser?.email || "");
   const [password, setPassword] = useState("");
 
-  const handleUpdate = () => {
-    console.log("update", { name, email, password });
-  };
+  const updateMutation = useMutation({
+    mutationFn: ({ userId, data }) => updateUser(userId, data),
 
-  const handleDelete = () => {
-    console.log("delete account");
+    onSuccess: (updatedUser) => {
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+
+      setPassword("");
+
+      alert("Profile updated");
+    },
+
+    onError: () => {
+      alert("Update failed");
+    },
+  });
+
+  // ✅ UPDATE
+  const handleUpdate = () => {
+    updateMutation.mutate({
+      userId: currentUser.id,
+      data: {
+        name,
+        email,
+        password: password || undefined,
+      },
+    });
   };
 
   return (
@@ -49,13 +73,15 @@ const ProfilePage = ({ currentUser }) => {
               />
             </div>
 
-            <Button onClick={handleUpdate}>Update Profile</Button>
+            <Button onClick={handleUpdate} disabled={updateMutation.isPending}>
+              {updateMutation.isPending ? "Updating..." : "Update Profile"}
+            </Button>
           </CardContent>
         </Card>
 
         <Separator />
 
-        {/* DELETE ACCOUNT */}
+        {/* DELETE */}
         <Card className="border-destructive">
           <CardHeader>
             <CardTitle className="text-destructive">Delete Account</CardTitle>
@@ -66,9 +92,7 @@ const ProfilePage = ({ currentUser }) => {
               This action cannot be undone.
             </p>
 
-            <Button variant="destructive" onClick={handleDelete}>
-              Delete Account
-            </Button>
+            <Button variant="destructive">Delete Account</Button>
           </CardContent>
         </Card>
       </div>
