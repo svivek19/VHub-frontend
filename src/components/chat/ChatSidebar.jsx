@@ -8,7 +8,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSeparator,
   DropdownMenuSubTrigger,
   DropdownMenuSub,
   DropdownMenuSubContent,
@@ -23,6 +22,7 @@ import { useState } from "react";
 const ChatSidebar = ({
   conversations,
   users,
+  setActivePage,
   onlineUsers,
   unread,
   setUnread,
@@ -69,7 +69,6 @@ const ChatSidebar = ({
             + New
           </Button>
 
-          {/* User Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Avatar className="cursor-pointer h-8 w-8">
@@ -79,6 +78,10 @@ const ChatSidebar = ({
 
             <DropdownMenuContent align="end" className="w-56 p-1">
               <DropdownMenuSub>
+                <DropdownMenuItem onClick={() => setActivePage("profile")}>
+                  Profile
+                </DropdownMenuItem>
+
                 <DropdownMenuSubTrigger>Theme</DropdownMenuSubTrigger>
 
                 <DropdownMenuSubContent className="w-44">
