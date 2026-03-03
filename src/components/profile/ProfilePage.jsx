@@ -1,16 +1,18 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-
-import { updateUser } from "@/services/userApi";
+import { updateUser, deleteUser } from "@/services/userApi";
 
 const ProfilePage = ({ currentUser }) => {
+  const navigate = useNavigate();
+
   const [name, setName] = useState(currentUser?.name || "");
   const [email, setEmail] = useState(currentUser?.email || "");
   const [password, setPassword] = useState("");
@@ -23,15 +25,27 @@ const ProfilePage = ({ currentUser }) => {
 
       setPassword("");
 
-      alert("Profile updated");
+      toast.success("Profile updated");
     },
 
     onError: () => {
-      alert("Update failed");
+      toast.error("Update failed");
+    },
+  });
+  const deleteMutation = useMutation({
+    mutationFn: (userId) => deleteUser(userId),
+
+    onSuccess: () => {
+      localStorage.clear();
+      navigate("/");
+      toast.success("Account deleted");
+    },
+
+    onError: () => {
+      toast.error("Delete failed");
     },
   });
 
-  // ✅ UPDATE
   const handleUpdate = () => {
     updateMutation.mutate({
       userId: currentUser.id,
@@ -81,7 +95,6 @@ const ProfilePage = ({ currentUser }) => {
 
         <Separator />
 
-        {/* DELETE */}
         <Card className="border-destructive">
           <CardHeader>
             <CardTitle className="text-destructive">Delete Account</CardTitle>
@@ -92,7 +105,40 @@ const ProfilePage = ({ currentUser }) => {
               This action cannot be undone.
             </p>
 
-            <Button variant="destructive">Delete Account</Button>
+            <Button
+              onClick={() => {
+                toast.custom((t) => (
+                  <div className="bg-background border rounded-lg p-4 shadow-lg space-y-3">
+                    <p className="font-medium">Are you sure?</p>
+                    <p className="text-sm text-muted-foreground">
+                      This will permanently delete your account.
+                    </p>
+                    <div className="flex gap-2 justify-end">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => toast.dismiss(t)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => {
+                          toast.dismiss(t);
+                          deleteMutation.mutate(currentUser.id);
+                        }}
+                      >
+                        Delete
+                      </Button>
+                    </div>
+                  </div>
+                ));
+              }}
+              variant="destructive"
+            >
+              Delete Account
+            </Button>
           </CardContent>
         </Card>
       </div>
