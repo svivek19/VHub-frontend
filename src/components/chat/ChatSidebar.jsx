@@ -184,7 +184,9 @@ const ChatSidebar = ({
             if (!user) return null;
 
             const isOnline = onlineUsers.includes(String(user._id));
-            const unreadCount = unread[user._id] || 0;
+
+            const unreadCount =
+              unread[user._id] ?? conversation.unreadCount ?? 0;
 
             return (
               <div
@@ -218,7 +220,7 @@ const ChatSidebar = ({
                   </span>
                 </div>
 
-                {unreadCount > 0 && (
+                {unreadCount > 0 && selectedUser?._id !== user._id && (
                   <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full">
                     {unreadCount}
                   </span>

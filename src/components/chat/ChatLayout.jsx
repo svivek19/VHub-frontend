@@ -78,6 +78,7 @@ const ChatLayout = () => {
 
   useEffect(() => {
     socket.on("unread-message", ({ senderId }) => {
+      if (selectedUser?._id === senderId) return;
       setUnread((prev) => ({
         ...prev,
         [senderId]: (prev[senderId] || 0) + 1,
@@ -87,7 +88,23 @@ const ChatLayout = () => {
     return () => {
       socket.off("unread-message");
     };
-  }, []);
+  }, [selectedUser]);
+
+  useEffect(() => {
+    if (!selectedUser) return;
+
+    const conversation = conversations.find((c) =>
+      c.participants.some((p) => String(p._id) === String(selectedUser._id)),
+    );
+
+    if (!conversation) return;
+
+    socket.emit("open-chat", {
+      userId: currentUser.id,
+      conversationId: conversation._id,
+    });
+  }, [selectedUser, conversations, currentUser]);
+
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === "Escape") {
