@@ -186,7 +186,7 @@ const ChatSidebar = ({
             const isOnline = onlineUsers.includes(String(user._id));
 
             const unreadCount =
-              unread[user._id] ?? conversation.unreadCount ?? 0;
+              unread[conversation._id] ?? conversation.unreadCount ?? 0;
 
             return (
               <div
@@ -196,7 +196,7 @@ const ChatSidebar = ({
 
                   setUnread((prev) => ({
                     ...prev,
-                    [user._id]: 0,
+                    [conversation._id]: 0,
                   }));
                 }}
                 className={`p-4 cursor-pointer hover:bg-accent flex justify-between items-center ${

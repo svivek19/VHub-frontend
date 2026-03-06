@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import ChatSidebar from "./ChatSidebar";
 import ChatHeader from "./ChatHeader";
@@ -12,6 +12,7 @@ import { socket } from "@/socket/socket";
 import ProfilePage from "../profile/ProfilePage";
 
 const ChatLayout = () => {
+  const queryClient = useQueryClient();
   const [activePage, setActivePage] = useState("chat");
   const [showUsers, setShowUsers] = useState(false);
   const [optimisticMessages, setOptimisticMessages] = useState([]);
@@ -77,11 +78,11 @@ const ChatLayout = () => {
   }, []);
 
   useEffect(() => {
-    socket.on("unread-message", ({ senderId }) => {
+    socket.on("unread-message", ({ senderId, conversationId }) => {
       if (selectedUser?._id === senderId) return;
       setUnread((prev) => ({
         ...prev,
-        [senderId]: (prev[senderId] || 0) + 1,
+        [conversationId]: (prev[conversationId] || 0) + 1,
       }));
     });
 
@@ -91,19 +92,29 @@ const ChatLayout = () => {
   }, [selectedUser]);
 
   useEffect(() => {
-    if (!selectedUser) return;
-
-    const conversation = conversations.find((c) =>
-      c.participants.some((p) => String(p._id) === String(selectedUser._id)),
-    );
-
-    if (!conversation) return;
-
-    socket.emit("open-chat", {
-      userId: currentUser.id,
-      conversationId: conversation._id,
+    socket.on("receive-message", () => {
+      queryClient.invalidateQueries(["conversations"]);
     });
-  }, [selectedUser, conversations, currentUser]);
+
+    return () => {
+      socket.off("receive-message");
+    };
+  }, [queryClient]);
+
+  // useEffect(() => {
+  //   if (!selectedUser) return;
+
+  //   const conversation = conversations.find((c) =>
+  //     c.participants.some((p) => String(p._id) === String(selectedUser._id)),
+  //   );
+
+  //   if (!conversation) return;
+
+  //   socket.emit("open-chat", {
+  //     userId: currentUser.id,
+  //     conversationId: conversation._id,
+  //   });
+  // }, [selectedUser, conversations, currentUser]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -125,6 +136,10 @@ const ChatLayout = () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [activePage, selectedUser]);
+
+  const selectedConversation = conversations.find((c) =>
+    c.participants.some((p) => String(p._id) === String(selectedUser?._id)),
+  );
 
   return (
     <div className="h-screen flex bg-muted overflow-hidden">
@@ -160,6 +175,7 @@ const ChatLayout = () => {
                 <ChatMessages
                   selectedUser={selectedUser}
                   currentUser={currentUser}
+                  conversationId={selectedConversation?._id}
                 />
 
                 <ChatInput
