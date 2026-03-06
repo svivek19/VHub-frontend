@@ -87,7 +87,7 @@ const ChatSidebar = ({
   });
 
   return (
-    <div className="w-72 border-r border-border bg-sidebar text-sidebar-foreground">
+    <div className="w-full md:w-72 h-screen border-r border-border bg-sidebar text-sidebar-foreground flex flex-col">
       <div className="p-4 border-b flex justify-between items-center">
         <span className="font-bold text-lg">VHub</span>
 
@@ -158,7 +158,7 @@ const ChatSidebar = ({
         </div>
       </div>
 
-      <ScrollArea className="h-[calc(100vh-64px)]">
+      <ScrollArea className="flex-1">
         {loading && (
           <p className="p-4 text-muted-foreground">Loading chats...</p>
         )}
@@ -205,9 +205,9 @@ const ChatSidebar = ({
               >
                 <div className="flex flex-col">
                   <div className="flex items-center gap-2">
-                    <span className="bg-gray-400 px-2.5 py-1 text-white rounded-full">
+                    <div className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center text-sm">
                       {user.name[0]}
-                    </span>
+                    </div>
                     <span>{user.name}</span>
 
                     {isOnline && (

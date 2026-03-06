@@ -143,25 +143,41 @@ const ChatLayout = () => {
 
   return (
     <div className="h-screen flex bg-muted overflow-hidden">
-      <ChatSidebar
-        conversations={conversations}
-        users={users}
-        setActivePage={setActivePage}
-        onlineUsers={onlineUsers}
-        unread={unread}
-        setUnread={setUnread}
-        showUsers={showUsers}
-        setShowUsers={setShowUsers}
-        loading={isLoading}
-        error={error}
-        selectedUser={selectedUser}
-        setSelectedUser={setSelectedUser}
-        currentUser={currentUser}
-        optimisticMessages={optimisticMessages}
-      />
+      <div
+        className={`
+  ${selectedUser ? "hidden md:block" : "block"}
+`}
+      >
+        <ChatSidebar
+          conversations={conversations}
+          users={users}
+          setActivePage={setActivePage}
+          onlineUsers={onlineUsers}
+          unread={unread}
+          setUnread={setUnread}
+          showUsers={showUsers}
+          setShowUsers={setShowUsers}
+          loading={isLoading}
+          error={error}
+          selectedUser={selectedUser}
+          setSelectedUser={setSelectedUser}
+          currentUser={currentUser}
+          optimisticMessages={optimisticMessages}
+        />
+      </div>
 
-      <div className="flex-1 flex flex-col">
-        {activePage === "profile" && <ProfilePage currentUser={currentUser} />}
+      <div
+        className={`
+    flex-1 flex flex-col
+    ${selectedUser ? "flex" : "hidden md:flex"}
+  `}
+      >
+        {activePage === "profile" && (
+          <ProfilePage
+            currentUser={currentUser}
+            onClose={() => setActivePage("chat")}
+          />
+        )}
 
         {activePage === "chat" && (
           <>
@@ -169,6 +185,7 @@ const ChatLayout = () => {
               <>
                 <ChatHeader
                   selectedUser={selectedUser}
+                  setSelectedUser={setSelectedUser}
                   onlineUsers={onlineUsers}
                 />
 

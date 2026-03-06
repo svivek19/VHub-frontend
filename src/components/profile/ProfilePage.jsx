@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { updateUser, deleteUser } from "@/services/userApi";
 
-const ProfilePage = ({ currentUser }) => {
+const ProfilePage = ({ currentUser, onClose }) => {
   const navigate = useNavigate();
 
   const [name, setName] = useState(currentUser?.name || "");
@@ -59,6 +59,13 @@ const ProfilePage = ({ currentUser }) => {
 
   return (
     <div className="flex-1 p-6 overflow-auto">
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-xl font-semibold">Profile</h1>
+
+        <Button variant="outline" size="sm" onClick={onClose}>
+          ← Back
+        </Button>
+      </div>
       <div className="max-w-xl mx-auto space-y-6">
         {/* UPDATE PROFILE */}
         <Card>
