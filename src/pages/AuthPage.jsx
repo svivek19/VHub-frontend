@@ -84,10 +84,14 @@ const AuthPage = () => {
     },
     {
       icon: Users,
-      label: "Group conversations",
-      desc: "Chat with anyone, anywhere",
+      label: "User presence",
+      desc: "See who is online instantly",
     },
-    { icon: Shield, label: "Secure & private", desc: "End-to-end encrypted" },
+    {
+      icon: Shield,
+      label: "Secure & private",
+      desc: "Protected user communication",
+    },
   ];
 
   return (
