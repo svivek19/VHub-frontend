@@ -1,3 +1,5 @@
+import { formatLastSeen } from "@/utils/format";
+
 const ChatHeader = ({ selectedUser, onlineUsers, setSelectedUser }) => {
   if (!selectedUser) {
     return (
@@ -25,9 +27,7 @@ const ChatHeader = ({ selectedUser, onlineUsers, setSelectedUser }) => {
           {isOnline
             ? "Online"
             : selectedUser.lastSeen
-              ? `Last seen ${new Date(
-                  selectedUser.lastSeen,
-                ).toLocaleTimeString()}`
+              ? `${formatLastSeen(selectedUser.lastSeen)}`
               : "Offline"}
         </span>
       </div>

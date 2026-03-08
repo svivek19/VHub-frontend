@@ -26,6 +26,10 @@ const ChatMessages = ({ selectedUser, currentUser }) => {
   // receive realtime message
   useEffect(() => {
     const handler = (msg) => {
+      // Ensure the message belongs to the selected conversation
+      if (String(msg.conversation) !== String(selectedUser?.conversationId))
+        return;
+
       setLocalMessages((prev) => {
         if (prev.some((m) => m._id === msg._id)) return prev;
         return [...prev, msg];
@@ -34,7 +38,7 @@ const ChatMessages = ({ selectedUser, currentUser }) => {
 
     socket.on("receive-message", handler);
     return () => socket.off("receive-message", handler);
-  }, []);
+  }, [selectedUser]);
 
   // typing indicator
   useEffect(() => {
