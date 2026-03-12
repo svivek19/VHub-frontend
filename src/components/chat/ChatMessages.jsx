@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { socket } from "@/socket/socket";
 import { getMessages } from "../../services/messageApi";
+import Message from "./Message";
 
 const ChatMessages = ({ selectedUser, currentUser }) => {
   const bottomRef = useRef(null);
@@ -123,12 +124,14 @@ const ChatMessages = ({ selectedUser, currentUser }) => {
     });
   };
 
-  const groupedMessages = localMessages.reduce((groups, msg) => {
-    const label = getDateLabel(msg.createdAt);
-    if (!groups[label]) groups[label] = [];
-    groups[label].push(msg);
-    return groups;
-  }, {});
+  const groupedMessages = useMemo(() => {
+    return localMessages.reduce((groups, msg) => {
+      const label = getDateLabel(msg.createdAt);
+      if (!groups[label]) groups[label] = [];
+      groups[label].push(msg);
+      return groups;
+    }, {});
+  }, [localMessages]);
 
   const groupEntries = Object.entries(groupedMessages);
 
@@ -145,41 +148,9 @@ const ChatMessages = ({ selectedUser, currentUser }) => {
 
           {/* Messages for this date */}
           <div className="space-y-2">
-            {msgs.map((msg) => {
-              const isMe = String(msg.sender) === String(currentUser?.id);
-
-              const time = new Date(msg.createdAt).toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              });
-
-              return (
-                <div
-                  key={msg._id}
-                  className={`flex ${isMe ? "justify-end" : "justify-start"}`}
-                >
-                  <div
-                    className={`max-w-[70%] px-3 py-2 rounded-2xl text-sm shadow ${
-                      isMe
-                        ? "bg-blue-600 text-white rounded-br-sm"
-                        : "bg-gray-200 text-black rounded-bl-sm"
-                    }`}
-                  >
-                    {msg.text}
-
-                    <div className="text-[10px] opacity-70 mt-1 text-right">
-                      {time}
-                    </div>
-
-                    {isMe && (
-                      <div className="text-[10px] text-right mt-1 opacity-80">
-                        {!msg.seen ? "✓" : "✓✓"}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+            {msgs.map((msg) => (
+              <Message key={msg._id} msg={msg} currentUser={currentUser} />
+            ))}
           </div>
         </div>
       ))}
