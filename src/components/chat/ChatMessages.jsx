@@ -136,7 +136,14 @@ const ChatMessages = ({ selectedUser, currentUser }) => {
   const groupEntries = Object.entries(groupedMessages);
 
   return (
-    <div className="flex-1 p-4 overflow-y-auto space-y-2">
+    <div
+      className="flex-1 p-4 overflow-y-auto bg-[#efeae2] dark:bg-[#0b141a]"
+      style={{
+        backgroundImage:
+          "radial-gradient(rgba(0,0,0,0.07) 1px, transparent 1px), radial-gradient(rgba(255,255,255,0.08) 1px, transparent 1px)",
+        backgroundSize: "20px 20px",
+      }}
+    >
       {groupEntries.map(([dateLabel, msgs]) => (
         <div key={dateLabel}>
           {/* Date separator */}

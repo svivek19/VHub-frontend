@@ -1,10 +1,17 @@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { socket } from "@/socket/socket";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
+import EmojiPicker, { Theme } from "emoji-picker-react";
+import { Smile } from "lucide-react";
+import { useTheme } from "@/hooks/useTheme";
 
 const ChatInput = ({ selectedUser, currentUser, onOptimisticMessage }) => {
   const [text, setText] = useState("");
+  const { theme } = useTheme();
+  const [showEmoji, setShowEmoji] = useState(false);
+
+  const emojiRef = useRef(null);
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter") {
@@ -36,14 +43,53 @@ const ChatInput = ({ selectedUser, currentUser, onOptimisticMessage }) => {
     });
   };
 
+  const handleEmojiClick = (emojiData) => {
+    setText((prev) => prev + emojiData.emoji);
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (emojiRef.current && !emojiRef.current.contains(event.target)) {
+        setShowEmoji(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  const emojiTheme =
+    theme === "dark"
+      ? Theme.DARK
+      : theme === "light"
+        ? Theme.LIGHT
+        : Theme.AUTO;
+
   return (
-    <div className="p-4 border-t bg-background flex gap-2">
+    <div className="relative p-4 border-t bg-background flex gap-2 items-center">
+      <button
+        onClick={() => setShowEmoji(!showEmoji)}
+        className="p-2 hover:bg-muted rounded-md transition"
+      >
+        <Smile size={22} />
+      </button>
+
+      {showEmoji && (
+        <div ref={emojiRef} className="absolute bottom-16">
+          <EmojiPicker onEmojiClick={handleEmojiClick} theme={emojiTheme} />
+        </div>
+      )}
+
       <Input
         value={text}
         onKeyDown={handleKeyDown}
         onChange={handleTyping}
         placeholder="Type a message..."
       />
+
       <Button onClick={sendMessage}>Send</Button>
     </div>
   );

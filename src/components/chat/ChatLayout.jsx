@@ -19,7 +19,7 @@ const ChatLayout = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [unread, setUnread] = useState({});
-  const currentUser = JSON.parse(localStorage.getItem("user"));
+  const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
 
   const {
     data: conversations = [],
@@ -101,21 +101,6 @@ const ChatLayout = () => {
     };
   }, [queryClient]);
 
-  // useEffect(() => {
-  //   if (!selectedUser) return;
-
-  //   const conversation = conversations.find((c) =>
-  //     c.participants.some((p) => String(p._id) === String(selectedUser._id)),
-  //   );
-
-  //   if (!conversation) return;
-
-  //   socket.emit("open-chat", {
-  //     userId: currentUser.id,
-  //     conversationId: conversation._id,
-  //   });
-  // }, [selectedUser, conversations, currentUser]);
-
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === "Escape") {
@@ -145,7 +130,8 @@ const ChatLayout = () => {
     <div className="h-screen flex bg-muted overflow-hidden">
       <div
         className={`
-  ${selectedUser ? "hidden md:block" : "block"}
+  w-full md:w-[320px] lg:w-87.5 shrink-0
+  ${selectedUser || activePage == "profile" ? "hidden md:block" : "block"}
 `}
       >
         <ChatSidebar
@@ -166,12 +152,7 @@ const ChatLayout = () => {
         />
       </div>
 
-      <div
-        className={`
-    flex-1 flex flex-col
-    ${selectedUser ? "flex" : "hidden md:flex"}
-  `}
-      >
+      <div className="flex-1 flex flex-col">
         {activePage === "profile" && (
           <ProfilePage
             currentUser={currentUser}
@@ -202,32 +183,54 @@ const ChatLayout = () => {
                 />
               </>
             ) : (
-              <div className="flex-1 flex items-center justify-center bg-background">
-                <div className="text-center max-w-sm space-y-4">
-                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-muted">
+              <div className="flex-1 flex items-center justify-center bg-background min-h-full">
+                <div className="flex flex-col items-center gap-4 max-w-70 text-center">
+                  <div className="w-14 h-14 rounded-xl border border-border bg-muted flex items-center justify-center">
                     <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-8 w-8 text-muted-foreground"
-                      fill="none"
+                      width="24"
+                      height="24"
                       viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={1.5}
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
                     >
                       <path
+                        d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
                         strokeLinecap="round"
                         strokeLinejoin="round"
-                        d="M8 10h8M8 14h5m-9 6 3-3h11a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v11z"
+                        className="text-muted-foreground"
+                      />
+                      <line
+                        x1="9"
+                        y1="9"
+                        x2="15"
+                        y2="9"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        className="text-muted-foreground"
+                      />
+                      <line
+                        x1="9"
+                        y1="13"
+                        x2="13"
+                        y2="13"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        className="text-muted-foreground"
                       />
                     </svg>
                   </div>
-
-                  <h2 className="text-lg font-semibold">
-                    No conversation selected
-                  </h2>
-
-                  <p className="text-sm text-muted-foreground">
-                    Choose a conversation from the sidebar
-                  </p>
+                  <div className="flex flex-col gap-1.5">
+                    <p className="text-sm font-medium text-foreground">
+                      No conversation selected
+                    </p>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      Choose a conversation from the sidebar.
+                    </p>
+                  </div>
                 </div>
               </div>
             )}

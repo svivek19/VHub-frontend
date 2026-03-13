@@ -58,22 +58,38 @@ const ProfilePage = ({ currentUser, onClose }) => {
   };
 
   return (
-    <div className="flex-1 p-6 overflow-auto">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-semibold">Profile</h1>
+    <div className="w-full h-full p-8 overflow-auto">
+      <div className="max-w-2xl mx-auto space-y-8">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold">Profile Settings</h1>
+            <p className="text-sm text-muted-foreground">
+              Manage your account information
+            </p>
+          </div>
 
-        <Button variant="outline" size="sm" onClick={onClose}>
-          ← Back
-        </Button>
-      </div>
-      <div className="max-w-xl mx-auto space-y-6">
-        {/* UPDATE PROFILE */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Update Profile</CardTitle>
+          <Button variant="outline" size="sm" onClick={onClose}>
+            ← Back
+          </Button>
+        </div>
+
+        {/* Profile Card */}
+        <Card className="shadow-sm">
+          <CardHeader className="flex flex-row items-center gap-4">
+            <div className="h-12 w-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold text-lg">
+              {name?.charAt(0).toUpperCase()}
+            </div>
+
+            <div>
+              <CardTitle>Update Profile</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Update your personal information
+              </p>
+            </div>
           </CardHeader>
 
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-5">
             <div className="space-y-2">
               <Label>Name</Label>
               <Input value={name} onChange={(e) => setName(e.target.value)} />
@@ -88,31 +104,39 @@ const ProfilePage = ({ currentUser, onClose }) => {
               <Label>New Password</Label>
               <Input
                 type="password"
-                placeholder="Leave empty if not change"
+                placeholder="Leave empty if not changing password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
 
-            <Button onClick={handleUpdate} disabled={updateMutation.isPending}>
-              {updateMutation.isPending ? "Updating..." : "Update Profile"}
-            </Button>
+            <div className="flex justify-end">
+              <Button
+                onClick={handleUpdate}
+                disabled={updateMutation.isPending}
+              >
+                {updateMutation.isPending ? "Updating..." : "Update Profile"}
+              </Button>
+            </div>
           </CardContent>
         </Card>
 
-        <Separator />
-
-        <Card className="border-destructive">
+        {/* Danger Zone */}
+        <Card className="border-destructive/50 bg-destructive/5">
           <CardHeader>
-            <CardTitle className="text-destructive">Delete Account</CardTitle>
+            <CardTitle className="text-destructive">Danger Zone</CardTitle>
           </CardHeader>
 
-          <CardContent className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              This action cannot be undone.
-            </p>
+          <CardContent className="flex items-center justify-between">
+            <div>
+              <p className="font-medium">Delete Account</p>
+              <p className="text-sm text-muted-foreground">
+                Permanently remove your account and all data.
+              </p>
+            </div>
 
             <Button
+              variant="destructive"
               onClick={() => {
                 toast.custom((t) => (
                   <div className="bg-background border rounded-lg p-4 shadow-lg space-y-3">
@@ -142,7 +166,6 @@ const ProfilePage = ({ currentUser, onClose }) => {
                   </div>
                 ));
               }}
-              variant="destructive"
             >
               Delete Account
             </Button>

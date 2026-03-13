@@ -61,7 +61,7 @@ const ChatSidebar = ({
   });
 
   return (
-    <div className="w-full md:w-72 h-screen border-r border-border bg-sidebar text-sidebar-foreground flex flex-col">
+    <div className="h-screen border-r border-border bg-sidebar text-sidebar-foreground flex flex-col">
       <div className="p-4 border-b flex justify-between items-center">
         <span className="font-bold text-lg">VHub</span>
 
@@ -79,7 +79,12 @@ const ChatSidebar = ({
 
             <DropdownMenuContent align="end" className="w-56 p-1">
               <DropdownMenuSub>
-                <DropdownMenuItem onClick={() => setActivePage("profile")}>
+                <DropdownMenuItem
+                  onClick={() => {
+                    setSelectedUser(null);
+                    setActivePage("profile");
+                  }}
+                >
                   Profile
                 </DropdownMenuItem>
 
@@ -132,7 +137,7 @@ const ChatSidebar = ({
         </div>
       </div>
 
-      <ScrollArea className="flex-1">
+      <ScrollArea className="flex-1 h-0">
         {loading && (
           <p className="p-4 text-muted-foreground">Loading chats...</p>
         )}
@@ -167,6 +172,7 @@ const ChatSidebar = ({
                 key={conversation._id}
                 onClick={() => {
                   setSelectedUser(user);
+                  setActivePage("chat");
 
                   setUnread((prev) => ({
                     ...prev,
