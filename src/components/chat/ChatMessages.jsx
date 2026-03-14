@@ -154,6 +154,20 @@ const ChatMessages = ({ selectedUser, currentUser }) => {
     return () => socket.off("message-deleted", handler);
   }, [currentUser.id]);
 
+  useEffect(() => {
+    const handler = ({ messageId, reactions }) => {
+      setLocalMessages((prev) =>
+        prev.map((msg) =>
+          msg._id === messageId ? { ...msg, reactions } : msg,
+        ),
+      );
+    };
+
+    socket.on("message-reacted", handler);
+
+    return () => socket.off("message-reacted", handler);
+  }, []);
+
   const groupedMessages = useMemo(() => {
     return localMessages.reduce((groups, msg) => {
       const label = getDateLabel(msg.createdAt);
