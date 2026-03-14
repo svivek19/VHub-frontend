@@ -124,6 +124,36 @@ const ChatMessages = ({ selectedUser, currentUser }) => {
     });
   };
 
+  useEffect(() => {
+    const handler = ({ messageId, type, userId }) => {
+      setLocalMessages((prev) =>
+        prev
+          .map((msg) => {
+            if (msg._id !== messageId) return msg;
+
+            if (type === "everyone") {
+              return {
+                ...msg,
+                text: "This message was deleted",
+                isDeletedForEveryone: true,
+              };
+            }
+
+            if (type === "me" && userId === currentUser.id) {
+              return null;
+            }
+
+            return msg;
+          })
+          .filter(Boolean),
+      );
+    };
+
+    socket.on("message-deleted", handler);
+
+    return () => socket.off("message-deleted", handler);
+  }, [currentUser.id]);
+
   const groupedMessages = useMemo(() => {
     return localMessages.reduce((groups, msg) => {
       const label = getDateLabel(msg.createdAt);
