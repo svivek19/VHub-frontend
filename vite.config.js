@@ -12,20 +12,21 @@ export default defineConfig({
     VitePWA({
       registerType: "autoUpdate",
       manifest: {
-        name: "MERN Chat",
+        name: "VHub",
         short_name: "Chat",
         start_url: "/",
         display: "standalone",
         background_color: "#0b141a",
         theme_color: "#0b141a",
+
         icons: [
           {
-            src: "pwa-192.png",
+            src: "/pwa-192.png",
             sizes: "192x192",
             type: "image/png",
           },
           {
-            src: "pwa-512.png",
+            src: "/pwa-512.png",
             sizes: "512x512",
             type: "image/png",
           },
