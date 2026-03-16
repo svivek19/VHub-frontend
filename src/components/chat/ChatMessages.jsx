@@ -181,7 +181,7 @@ const ChatMessages = ({ selectedUser, currentUser }) => {
 
   return (
     <div
-      className="flex-1 p-4 overflow-y-auto bg-[#efeae2] dark:bg-[#0b141a]"
+      className="flex-1 min-h-0 p-4 overflow-y-auto  bg-[#efeae2] dark:bg-[#0b141a]"
       style={{
         backgroundImage:
           "radial-gradient(rgba(0,0,0,0.07) 1px, transparent 1px), radial-gradient(rgba(255,255,255,0.08) 1px, transparent 1px)",

@@ -127,7 +127,7 @@ const ChatLayout = () => {
   );
 
   return (
-    <div className="h-screen flex bg-muted overflow-hidden">
+    <div className="h-dvh flex bg-muted overflow-hidden">
       <div
         className={`
   w-full md:w-[320px] lg:w-87.5 shrink-0
@@ -152,7 +152,7 @@ const ChatLayout = () => {
         />
       </div>
 
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-h-0">
         {activePage === "profile" && (
           <ProfilePage
             currentUser={currentUser}

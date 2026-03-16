@@ -11,6 +11,8 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuSub,
   DropdownMenuSubContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -78,53 +80,35 @@ const ChatSidebar = ({
             </DropdownMenuTrigger>
 
             <DropdownMenuContent align="end" className="w-56 p-1">
-              <DropdownMenuSub>
-                <DropdownMenuItem
-                  onClick={() => {
-                    setSelectedUser(null);
-                    setActivePage("profile");
-                  }}
-                >
-                  Profile
-                </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  setSelectedUser(null);
+                  setActivePage("profile");
+                }}
+              >
+                Profile
+              </DropdownMenuItem>
 
-                <DropdownMenuSubTrigger>Theme</DropdownMenuSubTrigger>
+              <DropdownMenuSeparator />
 
-                <DropdownMenuSubContent className="w-44">
-                  <DropdownMenuItem
-                    onClick={() => setTheme("light")}
-                    className="flex items-center justify-between"
-                  >
-                    <div className="flex items-center">
-                      <Sun className="mr-2 h-4 w-4" />
-                      Light
-                    </div>
-                    {theme === "light" && <span className="text-xs">✓</span>}
-                  </DropdownMenuItem>
+              <DropdownMenuLabel>Theme</DropdownMenuLabel>
 
-                  <DropdownMenuItem
-                    onClick={() => setTheme("dark")}
-                    className="flex items-center justify-between"
-                  >
-                    <div className="flex items-center">
-                      <Moon className="mr-2 h-4 w-4" />
-                      Dark
-                    </div>
-                    {theme === "dark" && <span className="text-xs">✓</span>}
-                  </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setTheme("light")}>
+                <Sun className="mr-2 h-4 w-4" />
+                Light
+              </DropdownMenuItem>
 
-                  <DropdownMenuItem
-                    onClick={() => setTheme("system")}
-                    className="flex items-center justify-between"
-                  >
-                    <div className="flex items-center">
-                      <Laptop className="mr-2 h-4 w-4" />
-                      System
-                    </div>
-                    {theme === "system" && <span className="text-xs">✓</span>}
-                  </DropdownMenuItem>
-                </DropdownMenuSubContent>
-              </DropdownMenuSub>
+              <DropdownMenuItem onClick={() => setTheme("dark")}>
+                <Moon className="mr-2 h-4 w-4" />
+                Dark
+              </DropdownMenuItem>
+
+              <DropdownMenuItem onClick={() => setTheme("system")}>
+                <Laptop className="mr-2 h-4 w-4" />
+                System
+              </DropdownMenuItem>
+
+              <DropdownMenuSeparator />
 
               <DropdownMenuItem
                 className="text-destructive focus:text-destructive"
