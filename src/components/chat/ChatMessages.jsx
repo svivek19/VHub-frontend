@@ -7,22 +7,45 @@ import Message from "./Message";
 const ChatMessages = ({ selectedUser, currentUser }) => {
   const bottomRef = useRef(null);
   const typingTimeout = useRef(null);
+  const containerRef = useRef(null);
+
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
 
   const [localMessages, setLocalMessages] = useState([]);
   const [isTyping, setIsTyping] = useState(false);
 
-  const { data } = useQuery({
-    queryKey: ["messages", selectedUser?._id],
-    queryFn: () => getMessages(selectedUser._id),
+  const { data, isFetching } = useQuery({
+    queryKey: ["messages", selectedUser?._id, page],
+    queryFn: () => getMessages(selectedUser._id, page),
     enabled: !!selectedUser,
+    keepPreviousData: false,
   });
-
-  const messages = data ?? [];
 
   // sync api messages
   useEffect(() => {
-    if (data) setLocalMessages(messages);
-  }, [data]);
+    if (!data) return;
+
+    const container = containerRef.current;
+    const prevHeight = container?.scrollHeight || 0;
+
+    if (data.length === 0) {
+      setHasMore(false);
+      return;
+    }
+
+    setLocalMessages((prev) => {
+      if (page === 1) return data;
+      return [...data, ...prev];
+    });
+
+    setTimeout(() => {
+      const newHeight = container?.scrollHeight;
+      if (container && prevHeight) {
+        container.scrollTop = newHeight - prevHeight;
+      }
+    }, 0);
+  }, [data, page]);
 
   // receive realtime message
   useEffect(() => {
@@ -99,8 +122,18 @@ const ChatMessages = ({ selectedUser, currentUser }) => {
 
   // auto scroll
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (page === 1) {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
   }, [localMessages.length]);
+
+  useEffect(() => {
+    if (!selectedUser) return;
+
+    setPage(1);
+    setHasMore(true);
+    setLocalMessages([]);
+  }, [selectedUser?._id]);
 
   // --- date grouping helper ---
   const getDateLabel = (dateStr) => {
@@ -168,6 +201,21 @@ const ChatMessages = ({ selectedUser, currentUser }) => {
     return () => socket.off("message-reacted", handler);
   }, []);
 
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      if (container.scrollTop <= 20 && hasMore && !isFetching) {
+        setPage((prev) => prev + 1);
+      }
+    };
+
+    container.addEventListener("scroll", handleScroll);
+
+    return () => container.removeEventListener("scroll", handleScroll);
+  }, [hasMore, isFetching]);
+
   const groupedMessages = useMemo(() => {
     return localMessages.reduce((groups, msg) => {
       const label = getDateLabel(msg.createdAt);
@@ -181,6 +229,7 @@ const ChatMessages = ({ selectedUser, currentUser }) => {
 
   return (
     <div
+      ref={containerRef}
       className="flex-1 min-h-0 p-4 overflow-y-auto  bg-[#efeae2] dark:bg-[#0b141a]"
       style={{
         backgroundImage:
