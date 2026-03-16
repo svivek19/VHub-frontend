@@ -19,6 +19,7 @@ const ChatLayout = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [unread, setUnread] = useState({});
+  const [replyMessage, setReplyMessage] = useState(null);
   const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
 
   const {
@@ -174,12 +175,15 @@ const ChatLayout = () => {
                   selectedUser={selectedUser}
                   currentUser={currentUser}
                   conversationId={selectedConversation?._id}
+                  setReplyMessage={setReplyMessage}
                 />
 
                 <ChatInput
                   selectedUser={selectedUser}
                   currentUser={currentUser}
                   onOptimisticMessage={addTempMessage}
+                  replyMessage={replyMessage}
+                  setReplyMessage={setReplyMessage}
                 />
               </>
             ) : (

@@ -6,7 +6,13 @@ import EmojiPicker, { Theme } from "emoji-picker-react";
 import { Smile } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 
-const ChatInput = ({ selectedUser, currentUser, onOptimisticMessage }) => {
+const ChatInput = ({
+  selectedUser,
+  currentUser,
+  onOptimisticMessage,
+  replyMessage,
+  setReplyMessage,
+}) => {
   const [text, setText] = useState("");
   const { theme } = useTheme();
   const [showEmoji, setShowEmoji] = useState(false);
@@ -29,6 +35,7 @@ const ChatInput = ({ selectedUser, currentUser, onOptimisticMessage }) => {
       senderId: currentUser.id,
       receiverId: selectedUser._id,
       text,
+      replyTo: replyMessage?._id,
     });
 
     setText("");
@@ -83,6 +90,18 @@ const ChatInput = ({ selectedUser, currentUser, onOptimisticMessage }) => {
         </div>
       )}
 
+      {replyMessage && (
+        <div className="absolute bottom-16 left-4 right-4 bg-muted p-2 rounded-md text-xs border-l-4 border-blue-500 flex justify-between">
+          <span>Replying to: {replyMessage.text}</span>
+
+          <button
+            onClick={() => setReplyMessage(null)}
+            className="text-red-400 text-xs"
+          >
+            cancel
+          </button>
+        </div>
+      )}
       <Input
         value={text}
         onKeyDown={handleKeyDown}

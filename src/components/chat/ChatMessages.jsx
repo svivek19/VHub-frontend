@@ -4,7 +4,7 @@ import { socket } from "@/socket/socket";
 import { getMessages } from "../../services/messageApi";
 import Message from "./Message";
 
-const ChatMessages = ({ selectedUser, currentUser }) => {
+const ChatMessages = ({ selectedUser, currentUser, setReplyMessage }) => {
   const bottomRef = useRef(null);
   const typingTimeout = useRef(null);
   const containerRef = useRef(null);
@@ -216,16 +216,32 @@ const ChatMessages = ({ selectedUser, currentUser }) => {
     return () => container.removeEventListener("scroll", handleScroll);
   }, [hasMore, isFetching]);
 
-  const groupedMessages = useMemo(() => {
-    return localMessages.reduce((groups, msg) => {
-      const label = getDateLabel(msg.createdAt);
-      if (!groups[label]) groups[label] = [];
-      groups[label].push(msg);
-      return groups;
-    }, {});
+  const sortedMessages = useMemo(() => {
+    return [...localMessages].sort(
+      (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
+    );
   }, [localMessages]);
 
-  const groupEntries = Object.entries(groupedMessages);
+  const groupedMessages = useMemo(() => {
+    const groups = [];
+    let lastLabel = null;
+
+    sortedMessages.forEach((msg) => {
+      const label = getDateLabel(msg.createdAt);
+
+      if (label !== lastLabel) {
+        groups.push({
+          label,
+          messages: [],
+        });
+        lastLabel = label;
+      }
+
+      groups[groups.length - 1].messages.push(msg);
+    });
+
+    return groups;
+  }, [sortedMessages]);
 
   return (
     <div
@@ -237,19 +253,24 @@ const ChatMessages = ({ selectedUser, currentUser }) => {
         backgroundSize: "20px 20px",
       }}
     >
-      {groupEntries.map(([dateLabel, msgs]) => (
-        <div key={dateLabel}>
+      {groupedMessages.map((group) => (
+        <div key={group.label}>
           {/* Date separator */}
           <div className="flex items-center justify-center my-3">
             <span className="bg-gray-200 text-gray-500 text-xs font-medium px-3 py-1 rounded-full shadow-sm">
-              {dateLabel}
+              {group.label}
             </span>
           </div>
 
           {/* Messages for this date */}
           <div className="space-y-2">
-            {msgs.map((msg) => (
-              <Message key={msg._id} msg={msg} currentUser={currentUser} />
+            {group.messages.map((msg) => (
+              <Message
+                key={msg._id}
+                msg={msg}
+                currentUser={currentUser}
+                onReply={setReplyMessage}
+              />
             ))}
           </div>
         </div>

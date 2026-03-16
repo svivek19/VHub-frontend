@@ -2,9 +2,7 @@ import React, { useEffect, useState } from "react";
 import { socket } from "@/socket/socket";
 import { EllipsisVertical } from "lucide-react";
 
-const Message = React.memo(({ msg, currentUser }) => {
-  const [showReactions, setShowReactions] = useState(false);
-
+const Message = React.memo(({ msg, currentUser, onReply }) => {
   const emojis = ["👍", "❤️", "😂", "😮", "😢", "🔥"];
 
   const isMe = String(msg.sender) === String(currentUser?.id);
@@ -42,8 +40,6 @@ const Message = React.memo(({ msg, currentUser }) => {
       userId: currentUser.id,
       emoji,
     });
-
-    setShowReactions(false);
   };
 
   useEffect(() => {
@@ -59,6 +55,7 @@ const Message = React.memo(({ msg, currentUser }) => {
       <div className="relative group max-w-[65%]">
         {/* message bubble */}
         <div
+          id={msg._id}
           className={`
         px-4 py-2 rounded-2xl text-sm shadow-sm
         ${
@@ -68,6 +65,24 @@ const Message = React.memo(({ msg, currentUser }) => {
         }
       `}
         >
+          {msg.replyTo && (
+            <div
+              onClick={() => {
+                document
+                  .getElementById(msg.replyTo._id)
+                  ?.scrollIntoView({ behavior: "smooth", block: "center" });
+              }}
+              className="bg-black/5 dark:bg-white/10 border-l-4 border-blue-500 pl-2 py-1 mb-1 rounded-sm text-xs cursor-pointer hover:bg-black/10 dark:hover:bg-white/20 transition"
+            >
+              <span className="block font-medium text-blue-500">
+                {msg.replyTo.sender === currentUser.id
+                  ? "You"
+                  : selectedUser?.name}
+              </span>
+
+              <span className="block opacity-80 ">{msg.replyTo.text}</span>
+            </div>
+          )}
           <div className={msg.isDeletedForEveryone ? "italic opacity-70" : ""}>
             {msg.isDeletedForEveryone ? "This message was deleted" : msg.text}
           </div>
@@ -132,6 +147,13 @@ const Message = React.memo(({ msg, currentUser }) => {
               className="block w-full text-left px-2 py-1 hover:bg-gray-100 dark:hover:bg-[#2a3942]"
             >
               Delete for me
+            </button>
+
+            <button
+              onClick={() => onReply(msg)}
+              className="text-xs text-gray-400 hover:text-gray-600"
+            >
+              Reply
             </button>
 
             {isMe && !msg.isDeletedForEveryone && (
