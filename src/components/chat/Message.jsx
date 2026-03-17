@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { socket } from "@/socket/socket";
 import { EllipsisVertical } from "lucide-react";
 
-const Message = React.memo(({ msg, currentUser, onReply }) => {
+const Message = React.memo(({ msg, currentUser, onReply, selectedUser }) => {
   const emojis = ["👍", "❤️", "😂", "😮", "😢", "🔥"];
 
   const isMe = String(msg.sender) === String(currentUser?.id);

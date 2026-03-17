@@ -269,6 +269,7 @@ const ChatMessages = ({ selectedUser, currentUser, setReplyMessage }) => {
                 key={msg._id}
                 msg={msg}
                 currentUser={currentUser}
+                selectedUser={selectedUser}
                 onReply={setReplyMessage}
               />
             ))}
