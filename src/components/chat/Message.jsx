@@ -52,7 +52,7 @@ const Message = React.memo(({ msg, currentUser, onReply, selectedUser }) => {
     <div
       className={`flex w-full mb-3 ${isMe ? "justify-end" : "justify-start"}`}
     >
-      <div className="relative group max-w-[65%]">
+      <div className="relative group max-w-[65%] md:max-w-[65%]">
         {/* message bubble */}
         <div
           id={msg._id}
