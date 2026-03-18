@@ -18,6 +18,8 @@ const ChatLayout = () => {
   const [optimisticMessages, setOptimisticMessages] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [onlineUsers, setOnlineUsers] = useState([]);
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [unread, setUnread] = useState({});
   const [replyMessage, setReplyMessage] = useState(null);
   const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
@@ -91,6 +93,14 @@ const ChatLayout = () => {
       socket.off("unread-message");
     };
   }, [selectedUser]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [search]);
 
   useEffect(() => {
     socket.on("receive-message", () => {
@@ -169,6 +179,7 @@ const ChatLayout = () => {
                   selectedUser={selectedUser}
                   setSelectedUser={setSelectedUser}
                   onlineUsers={onlineUsers}
+                  setSearch={setSearch}
                 />
 
                 <ChatMessages
@@ -176,6 +187,7 @@ const ChatLayout = () => {
                   currentUser={currentUser}
                   conversationId={selectedConversation?._id}
                   setReplyMessage={setReplyMessage}
+                  search={debouncedSearch}
                 />
 
                 <ChatInput

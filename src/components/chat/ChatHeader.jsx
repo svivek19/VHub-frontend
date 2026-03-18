@@ -1,6 +1,11 @@
 import { formatLastSeen } from "@/utils/format";
 
-const ChatHeader = ({ selectedUser, onlineUsers, setSelectedUser }) => {
+const ChatHeader = ({
+  selectedUser,
+  onlineUsers,
+  setSelectedUser,
+  setSearch,
+}) => {
   if (!selectedUser) {
     return (
       <div className="h-16 border-b flex items-center px-4 bg-background font-semibold">
@@ -30,6 +35,14 @@ const ChatHeader = ({ selectedUser, onlineUsers, setSelectedUser }) => {
               ? `${formatLastSeen(selectedUser.lastSeen)}`
               : "Offline"}
         </span>
+      </div>
+      <div className="flex-1 flex justify-end">
+        <input
+          type="search"
+          placeholder="Search..."
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-32 md:w-48 px-2 py-1 text-sm border rounded-md bg-muted outline-none"
+        />
       </div>
     </div>
   );
