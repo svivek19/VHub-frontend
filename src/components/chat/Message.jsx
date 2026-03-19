@@ -100,13 +100,24 @@ const Message = React.memo(
               </div>
             )}
 
-            <div
-              className={msg.isDeletedForEveryone ? "italic opacity-60" : ""}
-            >
-              {msg.isDeletedForEveryone
-                ? "This message was deleted"
-                : highlightText(msg.text)}
-            </div>
+            {/* Image — rendered inside the bubble */}
+            {msg.image && (
+              <img
+                src={msg.image}
+                alt="attachment"
+                className="w-48 rounded-lg mb-1 cursor-pointer hover:scale-105 transition"
+                onClick={() => window.open(msg.image, "_blank")}
+              />
+            )}
+
+            {/* Text — only render when there is actual content */}
+            {!msg.isDeletedForEveryone && msg.text && msg.text.trim() && (
+              <div>{highlightText(msg.text)}</div>
+            )}
+
+            {msg.isDeletedForEveryone && (
+              <div className="italic opacity-60">This message was deleted</div>
+            )}
 
             <div className="flex items-center justify-end gap-1 mt-1 text-[11px] opacity-60">
               <span>{time}</span>

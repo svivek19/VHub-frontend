@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import ChatSidebar from "./ChatSidebar";
@@ -13,6 +13,7 @@ import ProfilePage from "../profile/ProfilePage";
 
 const ChatLayout = () => {
   const queryClient = useQueryClient();
+  const messagesRef = useRef(null);
   const [activePage, setActivePage] = useState("chat");
   const [showUsers, setShowUsers] = useState(false);
   const [optimisticMessages, setOptimisticMessages] = useState([]);
@@ -183,8 +184,12 @@ const ChatLayout = () => {
                 />
 
                 <ChatMessages
-                  selectedUser={selectedUser}
+                  selectedUser={{
+                    ...selectedUser,
+                    conversationId: selectedConversation?._id,
+                  }}
                   currentUser={currentUser}
+                  ref={messagesRef}
                   conversationId={selectedConversation?._id}
                   setReplyMessage={setReplyMessage}
                   search={debouncedSearch}
@@ -192,8 +197,9 @@ const ChatLayout = () => {
 
                 <ChatInput
                   selectedUser={selectedUser}
+                  messagesRef={messagesRef}
                   currentUser={currentUser}
-                  onOptimisticMessage={addTempMessage}
+                  // onOptimisticMessage={addTempMessage}
                   replyMessage={replyMessage}
                   setReplyMessage={setReplyMessage}
                 />
