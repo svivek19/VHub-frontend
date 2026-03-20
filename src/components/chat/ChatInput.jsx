@@ -10,13 +10,14 @@ import { useUpload } from "@/hooks/useUpload";
 const ChatInput = ({
   selectedUser,
   currentUser,
-  messagesRef, // ref to ChatMessages — used to push optimistic messages
+  messagesRef,
   replyMessage,
   setReplyMessage,
 }) => {
   const [text, setText] = useState("");
   const { theme } = useTheme();
   const [showEmoji, setShowEmoji] = useState(false);
+  const typingTimeoutRef = useRef(null);
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState(null);
 
@@ -37,6 +38,8 @@ const ChatInput = ({
     const capturedText = text;
     const capturedImage = image;
     const capturedPreview = preview;
+
+    messagesRef?.current?.markShouldScroll();
 
     // 1. Show optimistic message immediately
     messagesRef?.current?.addOptimistic({
@@ -120,12 +123,26 @@ const ChatInput = ({
 
   const handleTyping = (e) => {
     setText(e.target.value);
+
+    // send typing
     socket.emit("typing", {
       senderId: currentUser.id,
       receiverId: selectedUser._id,
     });
-  };
 
+    // clear old timer
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    // stop typing after 1.5 sec
+    typingTimeoutRef.current = setTimeout(() => {
+      socket.emit("stop-typing", {
+        senderId: currentUser.id,
+        receiverId: selectedUser._id,
+      });
+    }, 1500);
+  };
   const handleEmojiClick = (emojiData) => {
     setText((prev) => prev + emojiData.emoji);
   };

@@ -16,6 +16,7 @@ const ChatMessages = forwardRef(
     const bottomRef = useRef(null);
     const typingTimeout = useRef(null);
     const containerRef = useRef(null);
+    const shouldScrollRef = useRef(false);
 
     const activeUserIdRef = useRef(null);
 
@@ -32,8 +33,6 @@ const ChatMessages = forwardRef(
 
     const isSearchMode = !!search;
 
-    // Expose addOptimistic and replaceMessage so the parent (ChatInput sibling)
-    // can push optimistic messages directly into this component's state.
     useImperativeHandle(ref, () => ({
       addOptimistic: (msg) => {
         setChatMessages((prev) => [...prev, msg]);
@@ -42,6 +41,9 @@ const ChatMessages = forwardRef(
         setChatMessages((prev) =>
           prev.map((m) => (m._id === tempId ? { ...m, ...realMsg } : m)),
         );
+      },
+      markShouldScroll: () => {
+        shouldScrollRef.current = true;
       },
     }));
 
@@ -75,6 +77,8 @@ const ChatMessages = forwardRef(
       setPage(1);
       setHasMore(true);
       setIsTyping(false);
+
+      shouldScrollRef.current = true;
     }, [selectedUser?._id]);
 
     useEffect(() => {
@@ -95,6 +99,11 @@ const ChatMessages = forwardRef(
         const newMsgs = chatData.filter((m) => !existingIds.has(m._id));
         return [...newMsgs, ...prev];
       });
+      if (page === 1) {
+        setTimeout(() => {
+          bottomRef.current?.scrollIntoView({ behavior: "auto" });
+        }, 0);
+      }
 
       if (page > 1) {
         setTimeout(() => {
@@ -184,19 +193,25 @@ const ChatMessages = forwardRef(
       return () => socket.off("message-image-updated", handler);
     }, []);
 
-    // ─── REALTIME: typing indicator ──────────────────────────────────────────
     useEffect(() => {
       const typingHandler = ({ senderId }) => {
         if (!selectedUser) return;
         if (String(senderId) !== String(selectedUser._id)) return;
         setIsTyping(true);
-        clearTimeout(typingTimeout.current);
-        typingTimeout.current = setTimeout(() => setIsTyping(false), 1500);
       };
+
+      const stopTypingHandler = ({ senderId }) => {
+        if (!selectedUser) return;
+        if (String(senderId) !== String(selectedUser._id)) return;
+        setIsTyping(false);
+      };
+
       socket.on("typing", typingHandler);
+      socket.on("stop-typing", stopTypingHandler);
+
       return () => {
         socket.off("typing", typingHandler);
-        clearTimeout(typingTimeout.current);
+        socket.off("stop-typing", stopTypingHandler);
       };
     }, [selectedUser]);
 
@@ -226,7 +241,10 @@ const ChatMessages = forwardRef(
 
     useEffect(() => {
       if (!isSearchMode && page === 1) {
-        bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+        if (shouldScrollRef.current || isNearBottom()) {
+          bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+          shouldScrollRef.current = false;
+        }
       }
     }, [chatMessages.length, isSearchMode]);
 
@@ -314,6 +332,16 @@ const ChatMessages = forwardRef(
       );
 
     const goPrev = () => setActiveIndex((prev) => (prev > 0 ? prev - 1 : prev));
+
+    const isNearBottom = () => {
+      const container = containerRef.current;
+      if (!container) return false;
+
+      return (
+        container.scrollHeight - container.scrollTop - container.clientHeight <
+        100
+      );
+    };
 
     const getDateLabel = (dateStr) => {
       const msgDate = new Date(dateStr);
