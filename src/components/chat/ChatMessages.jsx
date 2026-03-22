@@ -14,7 +14,7 @@ import Message from "./Message";
 const ChatMessages = forwardRef(
   ({ selectedUser, currentUser, setReplyMessage, search }, ref) => {
     const bottomRef = useRef(null);
-    const typingTimeout = useRef(null);
+
     const containerRef = useRef(null);
     const shouldScrollRef = useRef(false);
 
@@ -125,9 +125,8 @@ const ChatMessages = forwardRef(
     // ─── REALTIME: new messages ───────────────────────────────────────────────
     useEffect(() => {
       const handler = (msg) => {
-        // Accept message if:
-        // 1. conversationId matches (existing conversation), OR
-        // 2. sender/receiver matches current chat (new conversation — no conversationId yet)
+        const isOwnMessage = String(msg.sender) === String(currentUser?.id);
+
         const isCurrentConversation =
           (selectedUser?.conversationId &&
             String(msg.conversation) === String(selectedUser.conversationId)) ||
@@ -162,6 +161,12 @@ const ChatMessages = forwardRef(
 
           return [...prev, msg];
         });
+
+        if (isOwnMessage) {
+          setTimeout(() => {
+            bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+          }, 0);
+        }
       };
       socket.on("receive-message", handler);
       return () => socket.off("receive-message", handler);
