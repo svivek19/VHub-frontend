@@ -121,21 +121,23 @@ const ChatInput = ({
     }
   };
 
+  let lastTypingTime = 0;
+
   const handleTyping = (e) => {
     setText(e.target.value);
 
-    // send typing
-    socket.emit("typing", {
-      senderId: currentUser.id,
-      receiverId: selectedUser._id,
-    });
+    const now = Date.now();
 
-    // clear old timer
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current);
+    if (now - lastTypingTime > 500) {
+      socket.emit("typing", {
+        senderId: currentUser.id,
+        receiverId: selectedUser._id,
+      });
+      lastTypingTime = now;
     }
 
-    // stop typing after 1.5 sec
+    clearTimeout(typingTimeoutRef.current);
+
     typingTimeoutRef.current = setTimeout(() => {
       socket.emit("stop-typing", {
         senderId: currentUser.id,
@@ -143,6 +145,7 @@ const ChatInput = ({
       });
     }, 1500);
   };
+
   const handleEmojiClick = (emojiData) => {
     setText((prev) => prev + emojiData.emoji);
   };
