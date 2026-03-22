@@ -20,6 +20,7 @@ const ChatInput = ({
   const typingTimeoutRef = useRef(null);
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState(null);
+  const lastTypingTimeRef = useRef(0);
 
   const { upload, progress, uploading } = useUpload();
   const emojiRef = useRef(null);
@@ -34,12 +35,17 @@ const ChatInput = ({
   const sendMessage = async () => {
     if (!text.trim() && !image) return;
 
+    socket.emit("stop-typing", {
+      senderId: currentUser.id,
+      receiverId: selectedUser._id,
+    });
+
+    clearTimeout(typingTimeoutRef.current);
+
     const tempId = "temp-" + Date.now();
     const capturedText = text;
     const capturedImage = image;
     const capturedPreview = preview;
-
-    messagesRef?.current?.markShouldScroll();
 
     // 1. Show optimistic message immediately
     messagesRef?.current?.addOptimistic({
@@ -121,19 +127,17 @@ const ChatInput = ({
     }
   };
 
-  let lastTypingTime = 0;
-
   const handleTyping = (e) => {
     setText(e.target.value);
 
     const now = Date.now();
 
-    if (now - lastTypingTime > 500) {
+    if (now - lastTypingTimeRef.current > 500) {
       socket.emit("typing", {
         senderId: currentUser.id,
         receiverId: selectedUser._id,
       });
-      lastTypingTime = now;
+      lastTypingTimeRef.current = now;
     }
 
     clearTimeout(typingTimeoutRef.current);

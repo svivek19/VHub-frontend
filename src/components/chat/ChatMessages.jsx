@@ -99,11 +99,6 @@ const ChatMessages = forwardRef(
         const newMsgs = chatData.filter((m) => !existingIds.has(m._id));
         return [...newMsgs, ...prev];
       });
-      if (page === 1) {
-        setTimeout(() => {
-          bottomRef.current?.scrollIntoView({ behavior: "auto" });
-        }, 0);
-      }
 
       if (page > 1) {
         setTimeout(() => {
@@ -241,9 +236,8 @@ const ChatMessages = forwardRef(
 
     useEffect(() => {
       if (!isSearchMode && page === 1) {
-        if (shouldScrollRef.current || isNearBottom()) {
+        if (isNearBottom()) {
           bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-          shouldScrollRef.current = false;
         }
       }
     }, [chatMessages.length, isSearchMode]);
@@ -286,6 +280,16 @@ const ChatMessages = forwardRef(
       socket.on("message-reacted", handler);
       return () => socket.off("message-reacted", handler);
     }, []);
+
+    useEffect(() => {
+      if (!selectedUser) return;
+
+      setTimeout(() => {
+        bottomRef.current?.scrollIntoView({ behavior: "auto" });
+      }, 0);
+
+      shouldScrollRef.current = false;
+    }, [selectedUser?._id]);
 
     // ─── Infinite scroll ─────────────────────────────────────────────────────
     useEffect(() => {
