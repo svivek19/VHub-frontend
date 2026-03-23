@@ -35,6 +35,8 @@ const ChatInput = ({
   const sendMessage = async () => {
     if (!text.trim() && !image) return;
 
+    messagesRef?.current?.markShouldScroll();
+
     socket.emit("stop-typing", {
       senderId: currentUser.id,
       receiverId: selectedUser._id,
