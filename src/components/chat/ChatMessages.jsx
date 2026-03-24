@@ -60,8 +60,8 @@ const ChatMessages = forwardRef(
       queryKey: ["chat-messages", selectedUser?._id, page],
       queryFn: () => getMessages(selectedUser._id, page, ""),
       enabled: !!selectedUser && !isSearchMode,
-      staleTime: 0,
-      refetchOnMount: true,
+      staleTime: 1000 * 60 * 5,
+      refetchOnMount: false,
     });
 
     const { data: searchData, isFetching: searchFetching } = useQuery({
@@ -355,13 +355,11 @@ const ChatMessages = forwardRef(
     // ─── Build flat item list for Virtuoso (date separators + messages) ───────
     const activeMessages = isSearchMode ? searchMessages : chatMessages;
 
-    const sortedMessages = useMemo(
-      () =>
-        [...activeMessages].sort(
-          (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
-        ),
-      [activeMessages],
-    );
+    const sortedMessages = useMemo(() => {
+      return activeMessages.slice().sort((a, b) => {
+        return new Date(a.createdAt) - new Date(b.createdAt);
+      });
+    }, [activeMessages]);
 
     const flatItems = useMemo(() => {
       const items = [];
@@ -474,11 +472,14 @@ const ChatMessages = forwardRef(
           style={bgStyle}
         >
           {/* Initial load spinner — shown only on first page load */}
-          {!isSearchMode && chatFetching && page === 1 && (
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-              <span className="w-5 h-5 rounded-full border-2 border-gray-300 border-t-transparent animate-spin" />
-            </div>
-          )}
+          {!isSearchMode &&
+            chatFetching &&
+            page === 1 &&
+            chatMessages.length === 0 && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                <span className="w-5 h-5 rounded-full border-2 border-gray-300 border-t-transparent animate-spin" />
+              </div>
+            )}
 
           {showNoResults && (
             <div className="flex flex-col items-center justify-center gap-3 mt-20 text-center select-none px-4">
@@ -524,10 +525,7 @@ const ChatMessages = forwardRef(
                 and follow when already at the bottom for incoming messages.
             */
             followOutput={() => {
-              if (isSendingRef.current) {
-                isSendingRef.current = false;
-                return "smooth";
-              }
+              if (isSendingRef.current) return "smooth";
               return isAtBottomRef.current ? "smooth" : false;
             }}
             atBottomThreshold={300}

@@ -2,6 +2,23 @@ import React, { useEffect, useState } from "react";
 import { socket } from "@/socket/socket";
 import { EllipsisVertical } from "lucide-react";
 
+const highlightText = (text, search) => {
+  if (!search) return text;
+
+  const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const parts = text.split(new RegExp(`(${escaped})`, "gi"));
+
+  return parts.map((part, i) =>
+    part.toLowerCase() === search.toLowerCase() ? (
+      <span key={i} className="bg-yellow-300 text-black px-0.5 rounded">
+        {part}
+      </span>
+    ) : (
+      part
+    ),
+  );
+};
+
 const Message = React.memo(
   ({ msg, currentUser, onReply, selectedUser, search, isActive }) => {
     const emojis = ["👍", "❤️", "😂", "😮", "😢", "🔥"];
@@ -10,10 +27,12 @@ const Message = React.memo(
 
     const [menu, setMenu] = useState(false);
 
-    const time = new Date(msg.createdAt).toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    const time = React.useMemo(() => {
+      return new Date(msg.createdAt).toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    }, [msg.createdAt]);
 
     const deleteForMe = () => {
       socket.emit("delete-message", {
@@ -39,23 +58,6 @@ const Message = React.memo(
         userId: currentUser.id,
         emoji,
       });
-    };
-
-    const highlightText = (text) => {
-      if (!search) return text;
-
-      const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      const parts = text.split(new RegExp(`(${escaped})`, "gi"));
-
-      return parts.map((part, i) =>
-        part.toLowerCase() === search.toLowerCase() ? (
-          <span key={i} className="bg-yellow-300 text-black px-0.5 rounded">
-            {part}
-          </span>
-        ) : (
-          part
-        ),
-      );
     };
 
     useEffect(() => {
@@ -112,7 +114,7 @@ const Message = React.memo(
 
             {/* Text — only render when there is actual content */}
             {!msg.isDeletedForEveryone && msg.text && msg.text.trim() && (
-              <div>{highlightText(msg.text)}</div>
+              <div>{highlightText(msg.text, search)}</div>
             )}
 
             {msg.isDeletedForEveryone && (
@@ -224,4 +226,13 @@ const Message = React.memo(
   },
 );
 
-export default Message;
+export default React.memo(Message, (prev, next) => {
+  return (
+    prev.msg._id === next.msg._id &&
+    prev.msg.text === next.msg.text &&
+    prev.msg.seen === next.msg.seen &&
+    prev.msg.image === next.msg.image &&
+    JSON.stringify(prev.msg.reactions) === JSON.stringify(next.msg.reactions) &&
+    prev.isActive === next.isActive
+  );
+});
