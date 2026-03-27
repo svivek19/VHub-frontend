@@ -3,8 +3,11 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import ChatSidebar from "./ChatSidebar";
 import ChatHeader from "./ChatHeader";
-import ChatMessages from "./ChatMessages";
 import ChatInput from "./ChatInput";
+
+import { lazy, Suspense } from "react";
+
+const ChatMessages = lazy(() => import("./ChatMessages"));
 
 import { getConversations } from "../../services/conversationApi";
 import { getUsers } from "../../services/userApi";
@@ -57,8 +60,6 @@ const ChatLayout = () => {
     }
 
     const onConnect = () => {
-      console.log("SOCKET CONNECTED:", socket.id);
-
       if (currentUser) {
         socket.emit("user-connected", String(currentUser.id));
       }
@@ -104,14 +105,16 @@ const ChatLayout = () => {
   }, [search]);
 
   useEffect(() => {
-    socket.on("receive-message", () => {
+    const handler = () => {
       queryClient.invalidateQueries(["conversations"]);
-    });
+    };
+
+    socket.on("receive-message", handler);
 
     return () => {
-      socket.off("receive-message");
+      socket.off("receive-message", handler);
     };
-  }, [queryClient]);
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -139,7 +142,7 @@ const ChatLayout = () => {
   );
 
   return (
-    <div className="h-dvh flex bg-muted overflow-hidden">
+    <main className="h-dvh flex bg-muted overflow-hidden">
       <div
         className={`
   w-full md:w-[320px] lg:w-87.5 shrink-0
@@ -182,18 +185,19 @@ const ChatLayout = () => {
                   onlineUsers={onlineUsers}
                   setSearch={setSearch}
                 />
-
-                <ChatMessages
-                  selectedUser={{
-                    ...selectedUser,
-                    conversationId: selectedConversation?._id,
-                  }}
-                  currentUser={currentUser}
-                  ref={messagesRef}
-                  conversationId={selectedConversation?._id}
-                  setReplyMessage={setReplyMessage}
-                  search={debouncedSearch}
-                />
+                <Suspense fallback={<div>Loading chat...</div>}>
+                  <ChatMessages
+                    selectedUser={{
+                      ...selectedUser,
+                      conversationId: selectedConversation?._id,
+                    }}
+                    currentUser={currentUser}
+                    ref={messagesRef}
+                    conversationId={selectedConversation?._id}
+                    setReplyMessage={setReplyMessage}
+                    search={debouncedSearch}
+                  />
+                </Suspense>
 
                 <ChatInput
                   selectedUser={selectedUser}
@@ -259,7 +263,7 @@ const ChatLayout = () => {
           </>
         )}
       </div>
-    </div>
+    </main>
   );
 };
 

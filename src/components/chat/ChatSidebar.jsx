@@ -8,9 +8,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSubTrigger,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
@@ -19,7 +16,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { socket } from "@/socket/socket";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { formatLastSeen } from "@/utils/format";
 
 const ChatSidebar = ({
@@ -52,15 +49,17 @@ const ChatSidebar = ({
     navigate("/");
   };
 
-  const filteredConversations = conversations?.filter((conversation) => {
-    const user = conversation.participants.find(
-      (p) => String(p._id) !== String(currentUser.id),
-    );
+  const filteredConversations = useMemo(() => {
+    return conversations?.filter((conversation) => {
+      const user = conversation.participants.find(
+        (p) => String(p._id) !== String(currentUser.id),
+      );
 
-    if (!user) return false;
+      if (!user) return false;
 
-    return user.name.toLowerCase().includes(search.toLowerCase());
-  });
+      return user.name.toLowerCase().includes(search.toLowerCase());
+    });
+  }, [conversations, search]);
 
   return (
     <div className="h-screen border-r border-border bg-sidebar text-sidebar-foreground flex flex-col">
@@ -132,6 +131,7 @@ const ChatSidebar = ({
           <input
             type="search"
             placeholder="Search..."
+            aria-label="Search conversations"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full px-2 py-1 rounded border bg-background"
@@ -153,42 +153,45 @@ const ChatSidebar = ({
 
             return (
               <div
-                key={conversation._id}
-                onClick={() => {
-                  setSelectedUser(user);
-                  setActivePage("chat");
-
-                  setUnread((prev) => ({
-                    ...prev,
-                    [conversation._id]: 0,
-                  }));
-                }}
                 className={`p-4 cursor-pointer hover:bg-accent flex justify-between items-center ${
                   selectedUser?._id === user._id ? "bg-accent" : ""
                 }`}
               >
-                <div className="flex flex-col">
-                  <div className="flex items-center gap-2">
-                    <div className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center text-sm">
-                      {user.name[0]}
-                    </div>
-                    <span>{user.name}</span>
+                <button
+                  key={conversation._id}
+                  onClick={() => {
+                    setSelectedUser(user);
+                    setActivePage("chat");
 
-                    {isOnline && (
-                      <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                    )}
+                    setUnread((prev) => ({
+                      ...prev,
+                      [conversation._id]: 0,
+                    }));
+                  }}
+                >
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-2">
+                      <div className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center text-sm">
+                        {user.name[0]}
+                      </div>
+                      <span>{user.name}</span>
+
+                      {isOnline && (
+                        <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                      )}
+                    </div>
+
+                    <span className="text-xs text-gray-600 dark:text-gray-300 mt-1">
+                      {isOnline ? "Online" : formatLastSeen(user.lastSeen)}
+                    </span>
                   </div>
 
-                  <span className="text-xs text-gray-500 mt-1">
-                    {isOnline ? "Online" : formatLastSeen(user.lastSeen)}
-                  </span>
-                </div>
-
-                {unreadCount > 0 && selectedUser?._id !== user._id && (
-                  <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full">
-                    {unreadCount}
-                  </span>
-                )}
+                  {unreadCount > 0 && selectedUser?._id !== user._id && (
+                    <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full">
+                      {unreadCount}
+                    </span>
+                  )}
+                </button>
               </div>
             );
           })}

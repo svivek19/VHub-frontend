@@ -28,7 +28,7 @@ const ChatHeader = ({
       <div className="flex flex-col">
         <span className="font-semibold">{selectedUser.name}</span>
 
-        <span className="text-xs text-gray-500">
+        <span className="text-xs text-gray-600 dark:text-gray-300">
           {isOnline
             ? "Online"
             : selectedUser.lastSeen
@@ -40,6 +40,7 @@ const ChatHeader = ({
         <input
           type="search"
           placeholder="Search..."
+          aria-label="Search messages"
           onChange={(e) => setSearch(e.target.value)}
           className="w-32 md:w-48 px-2 py-1 text-sm border rounded-md bg-muted outline-none"
         />

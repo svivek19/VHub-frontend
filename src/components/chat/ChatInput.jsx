@@ -2,10 +2,13 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { socket } from "@/socket/socket";
 import { useState, useRef, useEffect } from "react";
-import EmojiPicker, { Theme } from "emoji-picker-react";
 import { Smile } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 import { useUpload } from "@/hooks/useUpload";
+import { lazy, Suspense } from "react";
+
+const EmojiPicker = lazy(() => import("emoji-picker-react"));
+const Theme = lazy(() => import("emoji-picker-react"));
 
 const ChatInput = ({
   selectedUser,
@@ -166,6 +169,12 @@ const ChatInput = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    return () => {
+      if (preview) URL.revokeObjectURL(preview);
+    };
+  }, [preview]);
+
   const emojiTheme =
     theme === "dark"
       ? Theme.DARK
@@ -178,13 +187,16 @@ const ChatInput = ({
       <button
         onClick={() => setShowEmoji(!showEmoji)}
         className="p-2 hover:bg-muted rounded-md transition"
+        aria-label="Open emoji picker"
       >
         <Smile size={22} />
       </button>
 
       {showEmoji && (
         <div ref={emojiRef} className="absolute bottom-16 z-50">
-          <EmojiPicker onEmojiClick={handleEmojiClick} theme={emojiTheme} />
+          <Suspense fallback={null}>
+            <EmojiPicker onEmojiClick={handleEmojiClick} theme={emojiTheme} />
+          </Suspense>
         </div>
       )}
 
@@ -224,6 +236,7 @@ const ChatInput = ({
       <button
         onClick={() => document.getElementById("imageInput").click()}
         className="p-2 hover:bg-muted rounded-md"
+        aria-label="Attach image"
       >
         📎
       </button>

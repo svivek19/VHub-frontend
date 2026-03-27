@@ -232,7 +232,7 @@ export default React.memo(Message, (prev, next) => {
     prev.msg.text === next.msg.text &&
     prev.msg.seen === next.msg.seen &&
     prev.msg.image === next.msg.image &&
-    JSON.stringify(prev.msg.reactions) === JSON.stringify(next.msg.reactions) &&
+    // JSON.stringify(prev.msg.reactions) === JSON.stringify(next.msg.reactions) &&
     prev.isActive === next.isActive
   );
 });
