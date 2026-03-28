@@ -137,10 +137,6 @@ const ChatLayout = () => {
     };
   }, [activePage, selectedUser]);
 
-  const selectedConversation = conversations.find((c) =>
-    c.participants.some((p) => String(p._id) === String(selectedUser?._id)),
-  );
-
   return (
     <main className="h-dvh flex bg-muted overflow-hidden">
       <div
@@ -187,13 +183,9 @@ const ChatLayout = () => {
                 />
                 <Suspense fallback={<div>Loading chat...</div>}>
                   <ChatMessages
-                    selectedUser={{
-                      ...selectedUser,
-                      conversationId: selectedConversation?._id,
-                    }}
+                    selectedUser={selectedUser}
                     currentUser={currentUser}
                     ref={messagesRef}
-                    conversationId={selectedConversation?._id}
                     setReplyMessage={setReplyMessage}
                     search={debouncedSearch}
                   />

@@ -152,47 +152,48 @@ const ChatSidebar = ({
               unread[conversation._id] ?? conversation.unreadCount ?? 0;
 
             return (
-              <div
-                className={`p-4 cursor-pointer hover:bg-accent flex justify-between items-center ${
-                  selectedUser?._id === user._id ? "bg-accent" : ""
+              <button
+                key={conversation._id}
+                className={`w-full p-4 cursor-pointer flex items-center justify-between text-left transition-colors ${
+                  selectedUser?._id === user._id
+                    ? "bg-blue-500/15 dark:bg-blue-500/20 border-l-[3px] border-blue-500"
+                    : "hover:bg-accent border-l-[3px] border-transparent"
                 }`}
+                onClick={() => {
+                  setSelectedUser({
+                    ...user,
+                    conversationId: conversation._id,
+                  });
+                  setActivePage("chat");
+                  setUnread((prev) => ({
+                    ...prev,
+                    [conversation._id]: 0,
+                  }));
+                }}
               >
-                <button
-                  key={conversation._id}
-                  onClick={() => {
-                    setSelectedUser(user);
-                    setActivePage("chat");
-
-                    setUnread((prev) => ({
-                      ...prev,
-                      [conversation._id]: 0,
-                    }));
-                  }}
-                >
-                  <div className="flex flex-col">
-                    <div className="flex items-center gap-2">
-                      <div className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center text-sm">
-                        {user.name[0]}
-                      </div>
-                      <span>{user.name}</span>
-
-                      {isOnline && (
-                        <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                      )}
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-2">
+                    <div className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center text-sm">
+                      {user.name[0]}
                     </div>
+                    <span>{user.name}</span>
 
-                    <span className="text-xs text-gray-600 dark:text-gray-300 mt-1">
-                      {isOnline ? "Online" : formatLastSeen(user.lastSeen)}
-                    </span>
+                    {isOnline && (
+                      <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                    )}
                   </div>
 
-                  {unreadCount > 0 && selectedUser?._id !== user._id && (
-                    <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full">
-                      {unreadCount}
-                    </span>
-                  )}
-                </button>
-              </div>
+                  <span className="text-xs text-gray-600 dark:text-gray-300 mt-1">
+                    {isOnline ? "Online" : formatLastSeen(user.lastSeen)}
+                  </span>
+                </div>
+
+                {unreadCount > 0 && selectedUser?._id !== user._id && (
+                  <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full">
+                    {unreadCount}
+                  </span>
+                )}
+              </button>
             );
           })}
 
@@ -212,6 +213,8 @@ const ChatSidebar = ({
         onOpenChange={setShowUsers}
         users={users}
         onSelectUser={setSelectedUser}
+        conversations={conversations}
+        currentUser={currentUser}
       />
     </div>
   );

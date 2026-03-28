@@ -8,17 +8,18 @@ import {
   useCallback,
 } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Virtuoso } from "react-virtuoso";
 import { socket } from "@/socket/socket";
 import { getMessages } from "../../services/messageApi";
 import Message from "./Message";
 
 const ChatMessages = forwardRef(
   ({ selectedUser, currentUser, setReplyMessage, search }, ref) => {
-    const virtuosoRef = useRef(null);
+    const scrollRef = useRef(null);
     const activeUserIdRef = useRef(null);
     const isSendingRef = useRef(false);
+    const isPaginatingRef = useRef(false);
     const isAtBottomRef = useRef(true);
+    const prevScrollHeightRef = useRef(0);
 
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
@@ -29,30 +30,34 @@ const ChatMessages = forwardRef(
     const [matchedIds, setMatchedIds] = useState([]);
     const [activeIndex, setActiveIndex] = useState(0);
 
-    // firstItemIndex: Virtuoso uses this to maintain scroll position when
-    // prepending older messages. Start high so we have room to prepend.
-    const PREPEND_OFFSET = 100_000;
-    const [firstItemIndex, setFirstItemIndex] = useState(PREPEND_OFFSET);
-
     const isSearchMode = !!search;
-    // Prevents startReached from firing before the first page finishes loading
     const isInitialLoadRef = useRef(true);
+
+    // ─── Helpers ──────────────────────────────────────────────────────────────
+    const scrollToBottom = useCallback((behavior = "auto") => {
+      const el = scrollRef.current;
+      if (!el) return;
+      el.scrollTo({ top: el.scrollHeight, behavior });
+    }, []);
+
+    const isNearBottom = useCallback(() => {
+      const el = scrollRef.current;
+      if (!el) return true;
+      return el.scrollHeight - el.scrollTop - el.clientHeight < 300;
+    }, []);
 
     // ─── Imperative handle for ChatInput ─────────────────────────────────────
     useImperativeHandle(ref, () => ({
       addOptimistic: (msg) => {
         isSendingRef.current = true;
         setChatMessages((prev) => [...prev, msg]);
-        // Virtuoso's followOutput will handle the scroll via isSendingRef
       },
       replaceMessage: (tempId, realMsg) => {
         setChatMessages((prev) =>
           prev.map((m) => (m._id === tempId ? { ...m, ...realMsg } : m)),
         );
       },
-      markShouldScroll: () => {
-        // Kept for API compatibility — isSendingRef handles it now
-      },
+      markShouldScroll: () => {},
     }));
 
     // ─── Queries ──────────────────────────────────────────────────────────────
@@ -62,6 +67,7 @@ const ChatMessages = forwardRef(
       enabled: !!selectedUser && !isSearchMode,
       staleTime: 1000 * 60 * 5,
       refetchOnMount: false,
+      refetchOnWindowFocus: false,
     });
 
     const { data: searchData, isFetching: searchFetching } = useQuery({
@@ -86,7 +92,7 @@ const ChatMessages = forwardRef(
       isAtBottomRef.current = true;
       setShowScrollBtn(false);
       isInitialLoadRef.current = true;
-      setFirstItemIndex(PREPEND_OFFSET);
+      isPaginatingRef.current = false;
     }, [selectedUser?._id]);
 
     // ─── Populate chat messages from query ───────────────────────────────────
@@ -98,43 +104,62 @@ const ChatMessages = forwardRef(
       const LIMIT = 20;
       setHasMore(chatData.length >= LIMIT);
 
-      setChatMessages((prev) => {
-        if (page === 1) {
-          // Mark initial load done so startReached doesn't fire immediately
-          setTimeout(() => {
-            isInitialLoadRef.current = false;
-          }, 500);
-          // Scroll to bottom after first load
-          setTimeout(() => {
-            virtuosoRef.current?.scrollToIndex({
-              index: "LAST",
-              behavior: "auto",
-            });
-          }, 50);
-          // Preserve any pending optimistic messages
-          const pending = prev.filter(
-            (m) => typeof m._id === "string" && m._id.startsWith("temp-"),
-          );
-          if (pending.length > 0) {
-            const serverIds = new Set(chatData.map((m) => m._id));
-            return [
-              ...chatData,
-              ...pending.filter((m) => !serverIds.has(m._id)),
-            ];
+      if (page === 1) {
+        setTimeout(() => {
+          isInitialLoadRef.current = false;
+        }, 500);
+
+        setChatMessages((prev) => {
+          const isFirstLoad = prev.length === 0;
+          const serverIds = new Set(chatData.map((m) => m._id));
+
+          // Preserve realtime + optimistic messages on query refetch
+          // (ChatLayout invalidates on every receive-message)
+          const lastServerTime = chatData[chatData.length - 1]?.createdAt ?? 0;
+          const extra = prev.filter((m) => {
+            if (serverIds.has(m._id)) return false;
+            if (typeof m._id === "string" && m._id.startsWith("temp-"))
+              return true;
+            return new Date(m.createdAt) > new Date(lastServerTime);
+          });
+
+          if (isFirstLoad) {
+            setTimeout(() => scrollToBottom("auto"), 50);
           }
-          return chatData;
-        }
-        // Pagination: prepend older messages, deduplicate
-        const existingIds = new Set(prev.map((m) => m._id));
-        const older = chatData.filter((m) => !existingIds.has(m._id));
-        if (older.length > 0) {
-          // Shift firstItemIndex down by the number of prepended items so
-          // Virtuoso keeps the viewport anchored at the current position.
-          setFirstItemIndex((idx) => idx - older.length);
-        }
-        return [...older, ...prev];
-      });
+
+          return [...chatData, ...extra];
+        });
+      } else {
+        // Pagination: save scroll height before prepend so we can restore position
+        const el = scrollRef.current;
+        prevScrollHeightRef.current = el ? el.scrollHeight : 0;
+
+        setChatMessages((prev) => {
+          const existingIds = new Set(prev.map((m) => m._id));
+          const older = chatData.filter((m) => !existingIds.has(m._id));
+          isPaginatingRef.current = false;
+          return [...older, ...prev];
+        });
+      }
     }, [chatData, selectedUser?._id]);
+
+    // ─── Restore scroll position after pagination prepend ────────────────────
+    // After older messages are prepended, the browser would normally jump to top.
+    // We restore it by adding the height difference back.
+    useEffect(() => {
+      if (page === 1) return;
+      const el = scrollRef.current;
+      if (!el || !prevScrollHeightRef.current) return;
+      // Use requestAnimationFrame to run after DOM paint
+      requestAnimationFrame(() => {
+        const newScrollHeight = el.scrollHeight;
+        const diff = newScrollHeight - prevScrollHeightRef.current;
+        if (diff > 0) {
+          el.scrollTop = diff;
+        }
+        prevScrollHeightRef.current = 0;
+      });
+    }, [chatMessages, page]);
 
     // ─── Populate search messages ─────────────────────────────────────────────
     useEffect(() => {
@@ -150,26 +175,16 @@ const ChatMessages = forwardRef(
     // ─── REALTIME: new messages ───────────────────────────────────────────────
     useEffect(() => {
       const handler = (msg) => {
-        // Only accept messages that belong to the active conversation:
-        // - conversation ID matches (reliable), OR
-        // - the other user sent it to us (incoming)
-        // We do NOT use `msg.sender === currentUser.id` alone because
-        // that would match our own messages from other conversations.
         const conversationMatches =
           selectedUser?.conversationId &&
           String(msg.conversation) === String(selectedUser.conversationId);
-
         const senderIsOtherUser =
           String(msg.sender) === String(selectedUser?._id);
-
         if (!conversationMatches && !senderIsOtherUser) return;
 
         setChatMessages((prev) => {
-          // Already have this message — skip
           if (prev.some((m) => String(m._id) === String(msg._id))) return prev;
 
-          // Replace matching optimistic entry (our own echo back from server).
-          // Match on sender + text so we don't wrongly swap an unrelated pending msg.
           const tempIndex = prev.findIndex(
             (m) =>
               typeof m._id === "string" &&
@@ -293,18 +308,42 @@ const ChatMessages = forwardRef(
       socket.emit("mark-seen", { conversationId: String(last.conversation) });
     }, [selectedUser?._id, chatMessages.length]);
 
-    // ─── Infinite scroll: fires when user scrolls to the top ────────────────
-    // We use atTopStateChange instead of startReached because startReached
-    // re-fires every time items are prepended (causing infinite loop).
-    const handleAtTopChange = useCallback(
-      (atTop) => {
-        if (!atTop) return;
-        if (isInitialLoadRef.current) return;
-        if (isSearchMode || !hasMore || chatFetching) return;
+    // ─── Auto-scroll on new messages ─────────────────────────────────────────
+    useEffect(() => {
+      if (isInitialLoadRef.current) return;
+      if (isPaginatingRef.current) return;
+      if (isSendingRef.current) {
+        isSendingRef.current = false;
+        scrollToBottom("smooth");
+        return;
+      }
+      if (isAtBottomRef.current) {
+        scrollToBottom("smooth");
+      }
+    }, [chatMessages.length]);
+
+    // ─── Scroll event: track position + infinite scroll trigger ─────────────
+    const handleScroll = useCallback(() => {
+      const el = scrollRef.current;
+      if (!el) return;
+
+      const atBottom = isNearBottom();
+      isAtBottomRef.current = atBottom;
+      setShowScrollBtn(!atBottom);
+
+      // Trigger pagination when near top
+      if (
+        el.scrollTop < 100 &&
+        !isInitialLoadRef.current &&
+        !isSearchMode &&
+        hasMore &&
+        !chatFetching &&
+        !isPaginatingRef.current
+      ) {
+        isPaginatingRef.current = true;
         setPage((prev) => prev + 1);
-      },
-      [isSearchMode, hasMore, chatFetching],
-    );
+      }
+    }, [isSearchMode, hasMore, chatFetching, isNearBottom]);
 
     // ─── Search highlighting ──────────────────────────────────────────────────
     useEffect(() => {
@@ -352,7 +391,7 @@ const ChatMessages = forwardRef(
       });
     };
 
-    // ─── Build flat item list for Virtuoso (date separators + messages) ───────
+    // ─── Build flat item list (date separators + messages) ───────────────────
     const activeMessages = isSearchMode ? searchMessages : chatMessages;
 
     const sortedMessages = useMemo(() => {
@@ -367,10 +406,10 @@ const ChatMessages = forwardRef(
       sortedMessages.forEach((msg) => {
         const label = getDateLabel(msg.createdAt);
         if (label !== lastLabel) {
-          items.push({ type: "date", label });
+          items.push({ type: "date", label, id: `date-${label}` });
           lastLabel = label;
         }
-        items.push({ type: "msg", msg });
+        items.push({ type: "msg", msg, id: msg._id });
       });
       return items;
     }, [sortedMessages]);
@@ -461,17 +500,12 @@ const ChatMessages = forwardRef(
           </div>
         )}
 
-        {/*
-          KEY FIX: Virtuoso IS the scroller. No overflow-y-auto wrapper div.
-          The outer div is just for background styling + positioning context.
-        */}
-        {/* Virtuoso MUST live in a flex child with a real measured height.
-             flex-1 + min-h-0 gives it the flex space; Virtuoso uses 100% of that. */}
+        {/* Chat scroll container */}
         <div
-          className="flex-1 min-h-0 bg-[#efeae2] dark:bg-[#0b141a] relative flex flex-col"
+          className="flex-1 min-h-0 bg-[#efeae2] dark:bg-[#0b141a] relative"
           style={bgStyle}
         >
-          {/* Initial load spinner — shown only on first page load */}
+          {/* Initial load spinner */}
           {!isSearchMode &&
             chatFetching &&
             page === 1 &&
@@ -481,112 +515,96 @@ const ChatMessages = forwardRef(
               </div>
             )}
 
-          {showNoResults && (
-            <div className="flex flex-col items-center justify-center gap-3 mt-20 text-center select-none px-4">
-              <div className="w-14 h-14 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center">
-                <svg
-                  width="26"
-                  height="26"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.6"
-                  className="text-yellow-500"
-                >
-                  <circle cx="11" cy="11" r="8" />
-                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                  <line x1="11" y1="8" x2="11" y2="11" />
-                  <line x1="11" y1="14" x2="11.01" y2="14" />
-                </svg>
+          <div
+            ref={scrollRef}
+            onScroll={handleScroll}
+            className="h-full overflow-y-auto"
+          >
+            {/* Pagination loading indicator */}
+            {!isSearchMode && chatFetching && page > 1 && (
+              <div className="text-center text-gray-400 text-xs py-2">
+                Loading older messages...
               </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-300">
-                  No messages found
-                </p>
-                <p className="text-xs text-gray-400 mt-1">
-                  No results for &ldquo;
-                  <span className="font-medium text-gray-500 dark:text-gray-400">
-                    {search}
-                  </span>
-                  &rdquo;
-                </p>
-              </div>
-            </div>
-          )}
+            )}
 
-          <Virtuoso
-            ref={virtuosoRef}
-            style={{ flex: 1 }}
-            data={flatItems}
-            /*
-              followOutput: Virtuoso calls this whenever new items are appended.
-              - Return "smooth" to scroll, false to stay put.
-              - We always scroll when WE just sent (isSendingRef),
-                and follow when already at the bottom for incoming messages.
-            */
-            followOutput={() => {
-              if (isSendingRef.current) return "smooth";
-              return isAtBottomRef.current ? "smooth" : false;
-            }}
-            atBottomThreshold={300}
-            atBottomStateChange={(atBottom) => {
-              isAtBottomRef.current = atBottom;
-              setShowScrollBtn(!atBottom);
-            }}
-            // Pull-to-load-more at the top
-            atTopStateChange={handleAtTopChange}
-            firstItemIndex={firstItemIndex}
-            components={{
-              Header: () =>
-                !isSearchMode && chatFetching && page > 1 ? (
-                  <div className="text-center text-gray-400 text-xs py-2">
-                    Loading older messages...
-                  </div>
-                ) : null,
-              Footer: () =>
-                isTyping ? (
-                  <div className="text-sm text-gray-500 italic px-6 py-2">
-                    {selectedUser?.name} is typing...
-                  </div>
-                ) : null,
-            }}
-            itemContent={(_index, item) => {
-              if (item.type === "date") {
-                return (
-                  <div className="flex items-center justify-center my-3 px-4">
-                    <span className="bg-white/70 dark:bg-[#202c33]/80 text-gray-500 dark:text-gray-400 text-xs px-3 py-1 rounded-full shadow-sm">
-                      {item.label}
+            {showNoResults && (
+              <div className="flex flex-col items-center justify-center gap-3 mt-20 text-center select-none px-4">
+                <div className="w-14 h-14 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center">
+                  <svg
+                    width="26"
+                    height="26"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.6"
+                    className="text-yellow-500"
+                  >
+                    <circle cx="11" cy="11" r="8" />
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                    <line x1="11" y1="8" x2="11" y2="11" />
+                    <line x1="11" y1="14" x2="11.01" y2="14" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                    No messages found
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    No results for &ldquo;
+                    <span className="font-medium text-gray-500 dark:text-gray-400">
+                      {search}
                     </span>
+                    &rdquo;
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Message list — plain DOM, no virtualizer */}
+            <div className="py-2">
+              {flatItems.map((item) => {
+                if (item.type === "date") {
+                  return (
+                    <div
+                      key={item.id}
+                      className="flex items-center justify-center my-3 px-4"
+                    >
+                      <span className="bg-white/70 dark:bg-[#202c33]/80 text-gray-500 dark:text-gray-400 text-xs px-3 py-1 rounded-full shadow-sm">
+                        {item.label}
+                      </span>
+                    </div>
+                  );
+                }
+                const { msg } = item;
+                return (
+                  <div key={item.id} className="px-6">
+                    <Message
+                      msg={msg}
+                      currentUser={currentUser}
+                      selectedUser={selectedUser}
+                      onReply={setReplyMessage}
+                      search={search}
+                      isMatch={matchedIds.includes(msg._id)}
+                      isActive={matchedIds[activeIndex] === msg._id}
+                    />
                   </div>
                 );
-              }
-              const { msg } = item;
-              return (
-                <div className="px-4">
-                  <Message
-                    msg={msg}
-                    currentUser={currentUser}
-                    selectedUser={selectedUser}
-                    onReply={setReplyMessage}
-                    search={search}
-                    isMatch={matchedIds.includes(msg._id)}
-                    isActive={matchedIds[activeIndex] === msg._id}
-                  />
-                </div>
-              );
-            }}
-          />
+              })}
+            </div>
+
+            {/* Typing indicator */}
+            {isTyping && (
+              <div className="text-sm text-gray-500 italic px-6 py-2">
+                {selectedUser?.name} is typing...
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Scroll-to-bottom button */}
         {showScrollBtn && (
           <button
-            onClick={() =>
-              virtuosoRef.current?.scrollToIndex({
-                index: "LAST",
-                behavior: "smooth",
-              })
-            }
+            onClick={() => scrollToBottom("smooth")}
             className="fixed bottom-24 right-6 bg-blue-500 text-white px-3 py-2 rounded-full shadow-lg hover:bg-blue-600 transition z-50"
           >
             ↓ New

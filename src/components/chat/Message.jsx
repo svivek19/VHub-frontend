@@ -140,7 +140,7 @@ const Message = React.memo(
               }}
               className={`
                 absolute top-2
-                ${isMe ? "-left-6" : "-right-6"}
+                ${isMe ? "right-full mr-1" : "left-full ml-1"}
                 opacity-0 group-hover:opacity-100
                 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300
                 transition-opacity
