@@ -1,8 +1,10 @@
+import React, { useMemo, useState, useCallback } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "../ui/button";
 import NewChatModal from "./NewChatModal";
 import { useTheme } from "@/hooks/useTheme";
 import { Sun, Moon, Laptop } from "lucide-react";
+import ChatItem from "./ChatItem";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,8 +18,6 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { socket } from "@/socket/socket";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { useMemo, useState } from "react";
-import { formatLastSeen } from "@/utils/format";
 
 const ChatSidebar = ({
   conversations,
@@ -48,6 +48,20 @@ const ChatSidebar = ({
 
     navigate("/");
   };
+
+  const handleSelectUser = useCallback((user, conversationId) => {
+    setSelectedUser({ ...user, conversationId });
+    setActivePage("chat");
+
+    setUnread((prev) => ({
+      ...prev,
+      [conversationId]: 0,
+    }));
+  }, []);
+
+  const onlineSet = useMemo(() => {
+    return new Set(onlineUsers.map(String));
+  }, [onlineUsers]);
 
   const filteredConversations = useMemo(() => {
     return conversations?.filter((conversation) => {
@@ -146,54 +160,20 @@ const ChatSidebar = ({
 
             if (!user) return null;
 
-            const isOnline = onlineUsers.includes(String(user._id));
+            const isOnline = onlineSet.has(String(user._id));
 
             const unreadCount =
               unread[conversation._id] ?? conversation.unreadCount ?? 0;
 
             return (
-              <button
+              <ChatItem
                 key={conversation._id}
-                className={`w-full p-4 cursor-pointer flex items-center justify-between text-left transition-colors ${
-                  selectedUser?._id === user._id
-                    ? "bg-blue-500/15 dark:bg-blue-500/20 border-l-[3px] border-blue-500"
-                    : "hover:bg-accent border-l-[3px] border-transparent"
-                }`}
-                onClick={() => {
-                  setSelectedUser({
-                    ...user,
-                    conversationId: conversation._id,
-                  });
-                  setActivePage("chat");
-                  setUnread((prev) => ({
-                    ...prev,
-                    [conversation._id]: 0,
-                  }));
-                }}
-              >
-                <div className="flex flex-col">
-                  <div className="flex items-center gap-2">
-                    <div className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center text-sm">
-                      {user.name[0]}
-                    </div>
-                    <span>{user.name}</span>
-
-                    {isOnline && (
-                      <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                    )}
-                  </div>
-
-                  <span className="text-xs text-gray-600 dark:text-gray-300 mt-1">
-                    {isOnline ? "Online" : formatLastSeen(user.lastSeen)}
-                  </span>
-                </div>
-
-                {unreadCount > 0 && selectedUser?._id !== user._id && (
-                  <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full">
-                    {unreadCount}
-                  </span>
-                )}
-              </button>
+                user={user}
+                isOnline={isOnline}
+                unreadCount={unreadCount}
+                isSelected={selectedUser?._id === user._id}
+                onClick={() => handleSelectUser(user, conversation._id)}
+              />
             );
           })}
 
@@ -220,4 +200,4 @@ const ChatSidebar = ({
   );
 };
 
-export default ChatSidebar;
+export default React.memo(ChatSidebar);

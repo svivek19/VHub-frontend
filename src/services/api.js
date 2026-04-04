@@ -19,7 +19,7 @@ api.interceptors.response.use(
   (error) => {
     if (
       error.response?.status === 401 &&
-      error.response?.data?.message === "Not authorized"
+      error.response?.data?.message === "Token failed"
     ) {
       localStorage.removeItem("token");
       window.location.href = "/";
