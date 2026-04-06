@@ -1,4 +1,10 @@
-import React, { useMemo, useState, useCallback } from "react";
+import React, {
+  useMemo,
+  useState,
+  useCallback,
+  useRef,
+  useEffect,
+} from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "../ui/button";
 import NewChatModal from "./NewChatModal";
@@ -19,6 +25,8 @@ import { socket } from "@/socket/socket";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 
+let lastScrollTop = 0;
+
 const ChatSidebar = ({
   conversations,
   users,
@@ -28,6 +36,9 @@ const ChatSidebar = ({
   setUnread,
   showUsers,
   setShowUsers,
+  hasNextPage,
+  fetchNextPage,
+  isFetchingNextPage,
   loading,
   error,
   selectedUser,
@@ -37,7 +48,9 @@ const ChatSidebar = ({
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
-  const { theme, setTheme } = useTheme();
+  const { setTheme } = useTheme();
+
+  const viewPortRef = useRef(null);
 
   const handleLogout = () => {
     localStorage.clear();
@@ -74,6 +87,26 @@ const ChatSidebar = ({
       return user.name.toLowerCase().includes(search.toLowerCase());
     });
   }, [conversations, search]);
+
+  useEffect(() => {
+    const el = viewPortRef.current;
+    if (!el) return;
+
+    const handleScroll = () => {
+      if (el.scrollHeight <= el.clientHeight) return;
+
+      if (
+        el.scrollTop + el.clientHeight >= el.scrollHeight - 50 &&
+        hasNextPage &&
+        !isFetchingNextPage
+      ) {
+        fetchNextPage();
+      }
+    };
+
+    el.addEventListener("scroll", handleScroll);
+    return () => el.removeEventListener("scroll", handleScroll);
+  }, [hasNextPage, isFetchingNextPage]);
 
   return (
     <div className="h-screen border-r border-border bg-sidebar text-sidebar-foreground flex flex-col">
@@ -134,14 +167,37 @@ const ChatSidebar = ({
         </div>
       </div>
 
-      <ScrollArea className="flex-1 h-0">
+      <div
+        className="flex-1 h-0 overflow-y-auto will-change-scroll"
+        onScroll={(e) => {
+          const el = e.currentTarget;
+
+          if (el.scrollHeight <= el.clientHeight) return;
+
+          const isScrollingDown = el.scrollTop > lastScrollTop;
+          lastScrollTop = el.scrollTop;
+
+          if (
+            isScrollingDown &&
+            el.scrollTop + el.clientHeight >= el.scrollHeight - 80 &&
+            hasNextPage &&
+            !isFetchingNextPage
+          ) {
+            fetchNextPage();
+          }
+        }}
+      >
         {loading && (
           <p className="p-4 text-muted-foreground">Loading chats...</p>
         )}
 
+        {isFetchingNextPage && (
+          <p className="p-2 text-center">Loading more...</p>
+        )}
+
         {error && <p className="p-4 text-red-500">Failed to load chats</p>}
 
-        <div className="p-2 border-b">
+        <div className="p-2 border-b" ref={viewPortRef}>
           <input
             type="search"
             placeholder="Search..."
@@ -186,7 +242,7 @@ const ChatSidebar = ({
             No chats yet. Send your first message.
           </p>
         )}
-      </ScrollArea>
+      </div>
 
       <NewChatModal
         open={showUsers}

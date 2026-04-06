@@ -1,5 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useQuery,
+  useQueryClient,
+  useInfiniteQuery,
+} from "@tanstack/react-query";
 
 import ChatSidebar from "./ChatSidebar";
 import ChatHeader from "./ChatHeader";
@@ -29,12 +33,19 @@ const ChatLayout = () => {
   const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
 
   const {
-    data: conversations = [],
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
     isLoading,
     error,
-  } = useQuery({
+  } = useInfiniteQuery({
     queryKey: ["conversations"],
     queryFn: getConversations,
+    getNextPageParam: (lastPage, allPages) => {
+      if (!lastPage || lastPage.length < 30) return undefined;
+      return allPages.length + 1;
+    },
   });
 
   const { data: users = [] } = useQuery({
@@ -42,17 +53,7 @@ const ChatLayout = () => {
     queryFn: getUsers,
   });
 
-  const addTempMessage = (text) => {
-    const tempMsg = {
-      _id: "temp-" + Date.now(),
-      sender: currentUser.id,
-      text,
-      createdAt: new Date(),
-      status: "sending",
-    };
-
-    setOptimisticMessages((prev) => [...prev, tempMsg]);
-  };
+  const conversations = data?.pages.flatMap((page) => page) || [];
 
   useEffect(() => {
     if (!socket.connected) {
@@ -147,6 +148,9 @@ const ChatLayout = () => {
       >
         <ChatSidebar
           conversations={conversations}
+          fetchNextPage={fetchNextPage}
+          hasNextPage={hasNextPage}
+          isFetchingNextPage={isFetchingNextPage}
           users={users}
           setActivePage={setActivePage}
           onlineUsers={onlineUsers}

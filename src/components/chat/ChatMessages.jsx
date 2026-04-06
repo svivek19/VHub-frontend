@@ -68,6 +68,7 @@ const ChatMessages = forwardRef(
       staleTime: 1000 * 60 * 5,
       refetchOnMount: false,
       refetchOnWindowFocus: false,
+      keepPreviousData: true,
     });
 
     const { data: searchData, isFetching: searchFetching } = useQuery({
@@ -110,22 +111,24 @@ const ChatMessages = forwardRef(
         }, 500);
 
         setChatMessages((prev) => {
+          if (
+            prev.length === chatData.length &&
+            prev[prev.length - 1]?._id === chatData[chatData.length - 1]?._id
+          ) {
+            return prev;
+          }
+
           const isFirstLoad = prev.length === 0;
           const serverIds = new Set(chatData.map((m) => m._id));
 
-          // Preserve realtime + optimistic messages on query refetch
-          // (ChatLayout invalidates on every receive-message)
           const lastServerTime = chatData[chatData.length - 1]?.createdAt ?? 0;
+
           const extra = prev.filter((m) => {
             if (serverIds.has(m._id)) return false;
             if (typeof m._id === "string" && m._id.startsWith("temp-"))
               return true;
             return new Date(m.createdAt) > new Date(lastServerTime);
           });
-
-          if (isFirstLoad) {
-            setTimeout(() => scrollToBottom("auto"), 50);
-          }
 
           return [...chatData, ...extra];
         });
