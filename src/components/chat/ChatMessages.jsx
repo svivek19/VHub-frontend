@@ -234,12 +234,19 @@ const ChatMessages = forwardRef(
     // ─── REALTIME: typing ─────────────────────────────────────────────────────
     useEffect(() => {
       const onTyping = ({ senderId }) => {
-        if (String(senderId) !== String(selectedUser?._id)) return;
-        setIsTyping(true);
+        if (!selectedUser) return;
+
+        if (String(senderId) === String(selectedUser._id)) {
+          setIsTyping(true);
+        }
       };
+
       const onStop = ({ senderId }) => {
-        if (String(senderId) !== String(selectedUser?._id)) return;
-        setIsTyping(false);
+        if (!selectedUser) return;
+
+        if (String(senderId) === String(selectedUser._id)) {
+          setIsTyping(false);
+        }
       };
       socket.on("typing", onTyping);
       socket.on("stop-typing", onStop);

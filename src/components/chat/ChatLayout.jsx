@@ -56,14 +56,16 @@ const ChatLayout = () => {
   const conversations = data?.pages.flatMap((page) => page) || [];
 
   useEffect(() => {
+    if (!currentUser?.id) return;
+
     if (!socket.connected) {
       socket.connect();
     }
 
+    socket.emit("user-connected", String(currentUser.id));
+
     const onConnect = () => {
-      if (currentUser) {
-        socket.emit("user-connected", String(currentUser.id));
-      }
+      socket.emit("user-connected", String(currentUser.id));
     };
 
     socket.on("connect", onConnect);
