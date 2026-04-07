@@ -38,7 +38,6 @@ User (Browser)
 
 ---
 
-````md
 ## Frontend Data Flow
 
 ```mermaid
@@ -59,12 +58,12 @@ C --> G[UI Update]
 E --> G
 
 G --> H[Rendered Chat UI]
-```
-````
 
-````
+```
 
 ---
+
+````
 
 ## Tech Stack
 
@@ -150,8 +149,6 @@ src/
 - Messages appear instantly before server response
 - Temporary IDs used (`temp-*`)
 - Replaced after server confirmation
-
-👉 This is **senior-level frontend optimization**
 
 ---
 
