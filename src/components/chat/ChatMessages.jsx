@@ -309,6 +309,18 @@ const ChatMessages = forwardRef(
       return () => socket.off("message-reacted", handler);
     }, []);
 
+    useEffect(() => {
+      socket.on("message-edited", ({ messageId, newText, edited }) => {
+        setChatMessages((prev) =>
+          prev.map((msg) =>
+            msg._id === messageId ? { ...msg, text: newText, edited } : msg,
+          ),
+        );
+      });
+
+      return () => socket.off("message-edited");
+    }, []);
+
     // ─── Mark messages as seen ───────────────────────────────────────────────
     useEffect(() => {
       if (!selectedUser || !chatMessages.length) return;

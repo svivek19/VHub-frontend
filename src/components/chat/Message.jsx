@@ -114,7 +114,12 @@ const Message = React.memo(
 
             {/* Text — only render when there is actual content */}
             {!msg.isDeletedForEveryone && msg.text && msg.text.trim() && (
-              <div>{highlightText(msg.text, search)}</div>
+              <div>
+                {highlightText(msg.text, search)}
+                {msg.edited && (
+                  <span className="text-[10px] opacity-50 ml-1">(edited)</span>
+                )}
+              </div>
             )}
 
             {msg.isDeletedForEveryone && (
@@ -187,6 +192,25 @@ const Message = React.memo(
                 Reply
               </button>
 
+              {isMe && !msg.isDeletedForEveryone && (
+                <button
+                  onClick={() => {
+                    const updatedText = prompt("Edit message", msg.text);
+                    if (updatedText && updatedText !== msg.text) {
+                      socket.emit("edit-message", {
+                        messageId: msg._id,
+                        newText: updatedText,
+                        userId: currentUser.id,
+                      });
+                    }
+                    setMenu(false);
+                  }}
+                  className="block w-full text-left px-2 py-1.5 text-sm rounded hover:bg-gray-100 dark:hover:bg-[#2a3942]"
+                >
+                  Edit
+                </button>
+              )}
+
               {/* Delete for me */}
               <button
                 onClick={deleteForMe}
@@ -230,6 +254,7 @@ export default React.memo(Message, (prev, next) => {
   return (
     prev.msg._id === next.msg._id &&
     prev.msg.text === next.msg.text &&
+    prev.msg.edited === next.msg.edited &&
     prev.msg.seen === next.msg.seen &&
     prev.msg.image === next.msg.image &&
     JSON.stringify(prev.msg.reactions) === JSON.stringify(next.msg.reactions) &&
