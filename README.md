@@ -326,7 +326,7 @@ npm run dev
 ## Testing Credentials
 
 - testuser@chat.com
-- lauren70@yahoo.com
+- marco@yahoo.com
 - password: password123
 
 ## Author
