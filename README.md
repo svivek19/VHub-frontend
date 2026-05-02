@@ -323,6 +323,12 @@ npm run dev
 
 ---
 
+## Testing Credentials
+
+- testuser@chat.com
+- lauren70@yahoo.com
+- password: password123
+
 ## Author
 
 **Vivekananthan S**
